@@ -18,6 +18,14 @@ O easy1090 usa o fork wiedehopf, que hoje compila limpo, então o problema não 
 
 Todo passo com `sudo` precisa de terminal real. Rodar via automação, CI ou ponte sem tty faz o `sudo` travar esperando senha ou falhar em silêncio. O preflight detecta e aborta cedo, mas vale repetir: o easy1090 não é feito para rodar sem interação humana no primeiro uso.
 
+### O instalador do tar1090 imprime "adduser: command not found"
+
+Duas vezes, logo no início. É ruído, não falha: a linha upstream é uma cadeia de fallback, `adduser ... || adduser ... || useradd -r -d "$ipath" -M tar1090`. As duas primeiras formas são Debianismos e não existem no Arch, então o `useradd` final é quem cria o usuário. Confirmado em teste real: o usuário `tar1090` é criado normalmente. Nada a corrigir do nosso lado, mas fica documentado para ninguém se assustar com a mensagem.
+
+### lighttpd avisa "unknown config-key: url.redirect (ignored)"
+
+Sintoma do mod_redirect ausente, descrito na seção de resolvidos. Se a mensagem voltar a aparecer depois de uma atualização, é sinal de que o arquivo `06-mod_redirect.conf` sumiu ou deixou de ser carregado.
+
 ### Sem CI de verdade
 
 Não dá para testar o caminho completo sem hardware RTL-SDR conectado. O que dá para automatizar é a parte estática: `shellcheck` e testes da lógica pura, como parsing de flags e detecção de distro. A validação de ponta a ponta continua manual, em VM ou máquina física, a cada mudança relevante do AUR ou do GCC.
@@ -45,6 +53,10 @@ A regra padrão do `rtl-sdr` usa `GROUP="plugdev"`. Para o usuário interativo i
 ### lighttpd do Arch não carrega conf-enabled
 
 O `lighttpd.conf` do pacote Arch tem só o essencial e não inclui nenhum diretório de configuração extra, diferente do Debian. Sem acrescentar o `include_shell`, toda a configuração que o instalador do tar1090 grava fica morta, silenciosamente, e o mapa responde 404 com tudo aparentemente instalado.
+
+### mod_redirect não é carregado no Arch, e a URL sem barra final dá 404
+
+O `88-tar1090.conf` gerado pelo instalador usa `url.redirect` para mandar `/tar1090` para `/tar1090/`, mas o instalador só cria carregadores para `mod_alias` e `mod_setenv`. No Debian o `mod_redirect` já vem ligado na configuração base; no Arch não. O lighttpd então avisa `unknown config-key: url.redirect (ignored)` e segue, e a URL sem barra final devolve 404. Pior: é exatamente essa a URL que o instalador anuncia ao terminar. O easy1090 cria um `06-mod_redirect.conf` em `conf-available` e o habilita por symlink.
 
 ### Instalador do tar1090 não sobe um lighttpd novo
 
