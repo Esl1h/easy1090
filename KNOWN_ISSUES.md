@@ -61,3 +61,13 @@ O `88-tar1090.conf` gerado pelo instalador usa `url.redirect` para mandar `/tar1
 ### Instalador do tar1090 não sobe um lighttpd novo
 
 O script upstream só reinicia o lighttpd se ele já estava ativo antes. Um lighttpd recém-instalado permanece `inactive (dead)` e desabilitado, mesmo com tudo o mais configurado corretamente.
+
+### `systemctl enable --now` não aplica config nova em serviço já rodando
+
+Descoberto no segundo teste real. O instalador escrevia `/etc/default/readsb` com coordenadas novas e o `enable --now` não fazia nada, porque a unidade já estava ativa. Resultado: o daemon seguia rodando com a configuração anterior, sem erro nenhum, e o `journalctl` mostrava a lat/lon antiga enquanto o arquivo em disco tinha a nova. O mesmo valia para o lighttpd depois de habilitar o `mod_redirect`.
+
+A correção é o `run::sudo_write` sinalizar se o conteúdo mudou de fato (`FILE_CHANGED`), e os módulos fazerem `restart` explícito quando mudou. É a mesma armadilha que já estava documentada no instalador upstream do tar1090, e que acabei repetindo.
+
+### `rtl_test` falha quando o readsb está rodando
+
+Numa reexecução, o `readsb` já detém o dispositivo, então o `rtl_test` enumera a placa mas não consegue reivindicar a interface, terminando com `usb_claim_interface error -6`. Isso não é defeito: é o sistema saudável. O módulo do driver reconhece essa saída e pula o teste, em vez de avisar que não identificou o tuner.
