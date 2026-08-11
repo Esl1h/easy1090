@@ -1,0 +1,25 @@
+# Configuração local (gerada a partir do .example)
+install.conf
+
+# Cache e artefatos de build
+.cache/
+*.pkg.tar.zst
+
+# Logs
+*.log
+
+# Temporários
+*.tmp
+tmp/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editores
+*.swp
+*.swo
+*~
+.vscode/
+.idea/
+.claude
