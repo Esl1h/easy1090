@@ -35,11 +35,11 @@ pkg::install() {
     done
 
     if [[ ${#missing[@]} -eq 0 ]]; then
-        log::skip "Já instalado: $*"
+        log::skip "$(t pkg_installed "$*")"
         return 0
     fi
 
-    log::info "Instalando via pacman: ${missing[*]}"
+    log::info "$(t pkg_pacman "${missing[*]}")"
     run::sudo pacman -S --needed --noconfirm "${missing[@]}"
 }
 
@@ -50,11 +50,11 @@ pkg::remove() {
     local package="$1"
 
     if ! pkg::is_installed "$package"; then
-        log::skip "Não instalado, nada a remover: $package"
+        log::skip "$(t pkg_absent "$package")"
         return 0
     fi
 
-    log::warn "Removendo pacote conflitante: $package"
+    log::warn "$(t pkg_removing "$package")"
     run::sudo pacman -R --noconfirm "$package"
 }
 
@@ -62,12 +62,12 @@ pkg::install_aur() {
     local package="$1"
 
     if pkg::is_installed "$package"; then
-        log::skip "Já instalado: $package"
+        log::skip "$(t pkg_installed "$package")"
         return 0
     fi
 
     util::require_command yay
-    log::info "Instalando via AUR: $package"
+    log::info "$(t pkg_aur "$package")"
     run::cmd yay -S --answerclean All --answerdiff None --removemake --noconfirm "$package"
 }
 
@@ -85,19 +85,19 @@ pkg::build_aur_isolated() {
     # Cloning straight from the AUR instead of `yay -G`: it lands exactly where
     # we ask, with no dependency on the helper's current working directory.
     if [[ -d "$build_dir" ]]; then
-        log::info "Limpando build anterior: $build_dir"
+        log::info "$(t pkg_clean_build "$build_dir")"
         run::cmd rm -rf "$build_dir"
     fi
 
     run::cmd mkdir -p "$(dirname "$build_dir")"
-    log::info "Clonando PKGBUILD de $package"
+    log::info "$(t pkg_cloning "$package")"
     run::cmd git clone --depth 1 "https://aur.archlinux.org/${package}.git" "$build_dir"
 }
 
 pkg::makepkg_install() {
     local build_dir="$1"
 
-    log::info "Compilando e instalando ($build_dir)"
+    log::info "$(t pkg_building "$build_dir")"
 
     if [[ "$DRY_RUN" == true ]]; then
         log::dry_run "cd $build_dir"
@@ -105,7 +105,7 @@ pkg::makepkg_install() {
         return 0
     fi
 
-    [[ -d "$build_dir" ]] || util::die "Diretório de build não encontrado: $build_dir"
+    [[ -d "$build_dir" ]] || util::die "$(t pkg_build_missing "$build_dir")"
 
     (
         cd "$build_dir" || exit 1
