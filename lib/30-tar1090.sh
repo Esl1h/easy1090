@@ -19,6 +19,7 @@
 readonly TAR1090_INSTALLER="${EASY1090_ROOT}/vendor/tar1090-install.sh"
 readonly LIGHTTPD_CONF="/etc/lighttpd/lighttpd.conf"
 readonly LIGHTTPD_CONF_D="/etc/lighttpd/conf.d"
+readonly LIGHTTPD_CONF_AVAILABLE="/etc/lighttpd/conf-available"
 readonly LIGHTTPD_CONF_ENABLED="/etc/lighttpd/conf-enabled"
 readonly TAR1090_URL_PATH="/tar1090/"
 
@@ -29,6 +30,7 @@ tar1090::run() {
     tar1090::verify_vendored
     tar1090::install
     tar1090::fix_lighttpd_include
+    tar1090::fix_mod_redirect
     tar1090::enable_lighttpd
 }
 
@@ -111,6 +113,32 @@ tar1090::fix_lighttpd_include() {
         util::die "Configuração do lighttpd inválida. Revise $LIGHTTPD_CONF antes de continuar."
 }
 
+# The tar1090 config uses url.redirect to send /tar1090 to /tar1090/, but only
+# ships module loaders for mod_alias and mod_setenv. On Debian mod_redirect is
+# already on in the base config; on Arch it is not, so lighttpd parses the
+# directive, warns "unknown config-key: url.redirect (ignored)" and moves on.
+# The result is a 404 on exactly the slash-less URL the installer prints at the
+# end of its own run.
+tar1090::fix_mod_redirect() {
+    local available="${LIGHTTPD_CONF_AVAILABLE}/06-mod_redirect.conf"
+    local enabled="${LIGHTTPD_CONF_ENABLED}/06-mod_redirect.conf"
+
+    [[ -d "$LIGHTTPD_CONF_AVAILABLE" ]] || {
+        log::debug "Sem $LIGHTTPD_CONF_AVAILABLE; nada a fazer."
+        return 0
+    }
+
+    if [[ -f "$available" && -e "$enabled" ]]; then
+        log::skip "mod_redirect já habilitado."
+        return 0
+    fi
+
+    log::info "Habilitando mod_redirect (o tar1090 usa url.redirect, e o Arch não carrega esse módulo por padrão)."
+    run::sudo_write "$available" '# easy1090: o tar1090 usa url.redirect para a URL sem barra final.
+server.modules += ( "mod_redirect" )'
+    run::sudo ln -sf "$available" "$enabled"
+}
+
 tar1090::enable_lighttpd() {
     log::info "Habilitando e iniciando o lighttpd."
     run::sudo systemctl enable --now lighttpd
@@ -119,11 +147,17 @@ tar1090::enable_lighttpd() {
 
     run::cmd sleep 2
 
-    local code
+    local code slashless
     code="$(curl -s -o /dev/null -w '%{http_code}' "http://localhost${TAR1090_URL_PATH}" || true)"
 
     if [[ "$code" == "200" ]]; then
         log::success "Mapa web respondendo em http://localhost${TAR1090_URL_PATH}"
+
+        # The installer advertises the URL without the trailing slash, so it is
+        # worth confirming that the redirect really works.
+        slashless="$(curl -s -o /dev/null -w '%{http_code}' "http://localhost${TAR1090_URL_PATH%/}" || true)"
+        [[ "$slashless" =~ ^(200|301|302)$ ]] ||
+            log::warn "http://localhost${TAR1090_URL_PATH%/} (sem barra final) devolveu $slashless; o redirect não está ativo."
     else
         log::error "Mapa web devolveu HTTP ${code:-sem resposta}."
         log::error "Cheque: systemctl status lighttpd tar1090"
