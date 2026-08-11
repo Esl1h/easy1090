@@ -1,0 +1,15 @@
+version: 2
+updates:
+  # Bash has no dependency manifest, so the only thing to keep current here are
+  # the actions used by CI. The vendored tar1090 installer is updated by hand,
+  # on purpose: it runs as root and the diff has to be read (see vendor/README.md).
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly
+    commit-message:
+      prefix: "ci"
+    groups:
+      actions:
+        patterns:
+          - "*"

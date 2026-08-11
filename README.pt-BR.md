@@ -1,5 +1,10 @@
 # easy1090
 
+[![CI](https://github.com/Esl1h/easy1090/actions/workflows/ci.yml/badge.svg)](https://github.com/Esl1h/easy1090/actions/workflows/ci.yml)
+[![Licença: MIT](https://img.shields.io/badge/licen%C3%A7a-MIT-blue.svg)](LICENSE)
+[![Shell: Bash](https://img.shields.io/badge/shell-bash-4EAA25.svg?logo=gnubash&logoColor=white)](https://www.gnu.org/software/bash/)
+[![Platform: Arch](https://img.shields.io/badge/platform-Arch%20Linux-1793D1.svg?logo=archlinux&logoColor=white)](https://archlinux.org/)
+
 [English](README.md) · **Português**
 
 Instalador do stack ADS-B completo (RTL-SDR + readsb + tar1090) em um comando, para Arch e derivados.
@@ -158,9 +163,13 @@ O passo a passo manual, com o porquê de cada escolha, está documentado na sér
 
 Se você quer entender antes de rodar um script de root, comece por lá.
 
+## Contribuindo
+
+Relato de bug em instalação real é a contribuição mais útil, porque este projeto existe para codificar atritos que só aparecem em hardware de verdade. Veja o [CONTRIBUTING.md](CONTRIBUTING.md), o [código de conduta](CODE_OF_CONDUCT.md) e a [política de segurança](SECURITY.md).
+
 ## Estado
 
-Em desenvolvimento. Testado em EndeavourOS e Omarchy com RTL-SDR Blog V4. Veja [KNOWN_ISSUES.md](KNOWN_ISSUES.md).
+Em desenvolvimento. Testado de ponta a ponta em EndeavourOS e Omarchy com RTL-SDR Blog V4. As mudanças ficam no [CHANGELOG.md](CHANGELOG.md), e os atritos encontrados no caminho, com suas causas, no [KNOWN_ISSUES.md](KNOWN_ISSUES.md).
 
 ## Licença
 

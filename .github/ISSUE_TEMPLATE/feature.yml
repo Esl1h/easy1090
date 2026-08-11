@@ -1,0 +1,35 @@
+name: Feature or distro support
+description: Suggest a change, or support for another distribution
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: The problem
+      description: What friction are you hitting? Describe the situation, not the solution you have in mind.
+    validations:
+      required: true
+
+  - type: textarea
+    id: idea
+    attributes:
+      label: What you would like
+      description: Optional. If you already have an approach in mind, describe it here.
+
+  - type: dropdown
+    id: kind
+    attributes:
+      label: Kind
+      options:
+        - Another distribution
+        - Another component in the stack
+        - Change to an existing command
+        - Documentation or translation
+        - Something else
+    validations:
+      required: true
+
+  - type: markdown
+    attributes:
+      value: |
+        For another distribution: every package manager call lives in `lib/pkg-arch.sh` behind the `pkg::*` interface, so this mostly means writing a sibling file. See [CONTRIBUTING.md](../blob/main/CONTRIBUTING.md).

@@ -1,0 +1,115 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  lint:
+    name: Shell lint and syntax
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install shellcheck
+        run: sudo apt-get update -q && sudo apt-get install -y shellcheck
+
+      - name: Syntax check every script
+        run: |
+          for f in easy1090 install.sh lib/*.sh lib/i18n/*.sh; do
+            bash -n "$f"
+          done
+
+      - name: shellcheck
+        run: shellcheck -S warning -e SC2155,SC2034 easy1090 install.sh lib/*.sh lib/i18n/*.sh
+
+  translations:
+    name: Translation catalogs
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # A missing key does not crash at runtime (t() falls back to the key
+      # itself), so nothing would tell you a translation is absent until a user
+      # in that language sees a raw key on screen.
+      - name: Catalogs must define the same keys
+        run: |
+          grep -o 'MSG\[[a-z0-9_]*\]' lib/i18n/pt.sh | sort -u > /tmp/pt.keys
+          grep -o 'MSG\[[a-z0-9_]*\]' lib/i18n/en.sh | sort -u > /tmp/en.keys
+          if ! diff -u /tmp/pt.keys /tmp/en.keys; then
+            echo "::error::pt.sh and en.sh do not define the same keys"
+            exit 1
+          fi
+          echo "$(wc -l < /tmp/pt.keys) keys, identical in both catalogs"
+
+      - name: Every key used in code must exist in the catalogs
+        run: |
+          grep -ohE '\$\(t [a-z0-9_]+' easy1090 install.sh lib/*.sh \
+            | sed 's/\$(t //' | sort -u > /tmp/used.keys
+          sed 's/MSG\[\(.*\)\]/\1/' /tmp/pt.keys 2>/dev/null > /tmp/have.keys || \
+            grep -o 'MSG\[[a-z0-9_]*\]' lib/i18n/pt.sh | sed 's/MSG\[\(.*\)\]/\1/' | sort -u > /tmp/have.keys
+          missing="$(comm -23 /tmp/used.keys /tmp/have.keys)"
+          if [ -n "$missing" ]; then
+            echo "::error::keys used in code but missing from the catalogs:"
+            echo "$missing"
+            exit 1
+          fi
+          echo "$(wc -l < /tmp/used.keys) keys used, all translated"
+
+      # Catalog entries are printf format strings. An unescaped $ would be
+      # expanded when the file is sourced, and under set -u that aborts the
+      # whole run before anything happens.
+      - name: No unescaped shell variables in catalogs
+        run: |
+          if grep -nE '(^|[^\\])\$[A-Za-z_]' lib/i18n/*.sh; then
+            echo "::error::unescaped \$variable in a catalog; escape it as \\\$"
+            exit 1
+          fi
+          echo "no unescaped variables"
+
+  vendor:
+    name: Vendored installer pin
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # The vendored script runs as root. The pin in install.conf.example is
+      # what proves the committed bytes are the reviewed ones.
+      - name: Checksum must match the pin in install.conf.example
+        run: |
+          actual="$(sha256sum vendor/tar1090-install.sh | cut -d' ' -f1)"
+          pinned="$(grep '^TAR1090_INSTALLER_SHA256=' install.conf.example | cut -d'"' -f2)"
+          echo "file:   $actual"
+          echo "pinned: $pinned"
+          [ "$actual" = "$pinned" ] || {
+            echo "::error::vendor/tar1090-install.sh does not match the pinned checksum"
+            exit 1
+          }
+
+  smoke:
+    name: Non-Arch guard
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # The runner is Ubuntu, so the preflight has to refuse. This is the only
+      # end to end behaviour testable without an RTL-SDR attached.
+      - name: Preflight refuses a non-Arch distro
+        run: |
+          set +e
+          out="$(./easy1090 install --dry-run --lang en 2>&1)"
+          code=$?
+          echo "$out"
+          [ $code -ne 0 ] || { echo "::error::should have failed on Ubuntu"; exit 1; }
+          echo "$out" | grep -q "Arch and derivatives only" || {
+            echo "::error::did not fail with the expected distro message"; exit 1; }
+
+      - name: Help and version work anywhere
+        run: |
+          ./easy1090 --version
+          ./easy1090 --help > /dev/null
+          ./easy1090 --lang pt --help > /dev/null

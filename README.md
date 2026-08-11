@@ -1,5 +1,10 @@
 # easy1090
 
+[![CI](https://github.com/Esl1h/easy1090/actions/workflows/ci.yml/badge.svg)](https://github.com/Esl1h/easy1090/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![Shell: Bash](https://img.shields.io/badge/shell-bash-4EAA25.svg?logo=gnubash&logoColor=white)](https://www.gnu.org/software/bash/)
+[![Platform: Arch](https://img.shields.io/badge/platform-Arch%20Linux-1793D1.svg?logo=archlinux&logoColor=white)](https://archlinux.org/)
+
 **English** · [Português](README.pt-BR.md)
 
 One command installer for a complete ADS-B stack (RTL-SDR + readsb + tar1090) on Arch and derivatives.
@@ -158,9 +163,13 @@ The manual walkthrough, with the reasoning behind every choice, is documented in
 
 If you want to understand before running a root script, start there.
 
+## Contributing
+
+Bug reports from real installations are the most useful contribution, because this project exists to encode friction that only shows up on actual hardware. See [CONTRIBUTING.md](CONTRIBUTING.md), the [code of conduct](CODE_OF_CONDUCT.md) and the [security policy](SECURITY.md).
+
 ## Status
 
-Under development. Tested on EndeavourOS and Omarchy with an RTL-SDR Blog V4. See [KNOWN_ISSUES.md](KNOWN_ISSUES.md).
+Under development. Tested end to end on EndeavourOS and Omarchy with an RTL-SDR Blog V4. Changes are tracked in [CHANGELOG.md](CHANGELOG.md), and the frictions found along the way, with their causes, in [KNOWN_ISSUES.md](KNOWN_ISSUES.md).
 
 ## License
 

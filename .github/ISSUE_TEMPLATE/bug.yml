@@ -1,0 +1,66 @@
+name: Bug report
+description: Something failed during install, or a component is not working
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Most bugs in this project show up on the **second** run, not the first, and produce no error message of their own. The output of `status` and the dry-run below usually pin it down immediately.
+
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened
+      description: What you expected, and what happened instead.
+    validations:
+      required: true
+
+  - type: dropdown
+    id: when
+    attributes:
+      label: When did it happen
+      options:
+        - First install on a clean machine
+        - Re-running the installer
+        - After a reboot
+        - While using it, after a working install
+    validations:
+      required: true
+
+  - type: textarea
+    id: status
+    attributes:
+      label: Output of `./easy1090 status`
+      render: text
+    validations:
+      required: true
+
+  - type: textarea
+    id: dryrun
+    attributes:
+      label: Output of `./easy1090 install --dry-run`
+      description: Read-only. It changes nothing and shows what the installer thinks it needs to do.
+      render: text
+    validations:
+      required: true
+
+  - type: input
+    id: distro
+    attributes:
+      label: Distribution and kernel
+      placeholder: "EndeavourOS, 7.1.4-arch1-1"
+    validations:
+      required: true
+
+  - type: input
+    id: dongle
+    attributes:
+      label: Dongle
+      placeholder: "RTL-SDR Blog V4, or v3, or a clone"
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant logs
+      description: "`journalctl -u readsb -n 40 --no-pager`, or lighttpd/tar1090 if the map is the problem."
+      render: text

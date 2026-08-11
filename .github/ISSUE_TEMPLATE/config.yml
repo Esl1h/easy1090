@@ -1,0 +1,11 @@
+blank_issues_enabled: false
+contact_links:
+  - name: The story behind the code
+    url: https://esli.blog/tags/adsb/
+    about: The manual walkthrough, with the reasoning behind every decision, on my blog.
+  - name: Known issues
+    url: https://github.com/Esl1h/easy1090/blob/main/KNOWN_ISSUES.md
+    about: Check here first. Several odd behaviours are documented with their cause.
+  - name: Security problem
+    url: https://github.com/Esl1h/easy1090/blob/main/SECURITY.md
+    about: Do not open a public issue. See the security policy.
