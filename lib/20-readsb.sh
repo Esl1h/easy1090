@@ -103,10 +103,6 @@ readsb::configure() {
         log::warn "$(t feed_enabled "ADSBExchange")"
         net_connectors+=" --net-connector feed.adsbexchange.com,30005,beast_reduce_out"
     fi
-    if [[ "$FEEDER_FLIGHTAWARE" == true ]]; then
-        log::warn "$(t feed_enabled "FlightAware")"
-        net_connectors+=" --net-connector piaware.flightaware.com,1200,beast_reduce_out"
-    fi
     [[ -n "$net_connectors" ]] && net_options+="$net_connectors"
 
     json_options="--json-location-accuracy ${JSON_LOCATION_ACCURACY} --range-outline-hours 24"
@@ -115,12 +111,29 @@ readsb::configure() {
     run::sudo_write "$READSB_DEFAULTS" "$(printf '%b\nRECEIVER_OPTIONS="%s"\nDECODER_OPTIONS="%s"\nNET_OPTIONS="%s"\nJSON_OPTIONS="%s"' \
         "$(t rsb_defaults_header)" \
         "$receiver_options" "$decoder_options" "$net_options" "$json_options")"
+
+    READSB_NEEDS_RESTART="$FILE_CHANGED"
 }
 
 readsb::enable() {
     log::info "$(t rsb_enabling)"
     run::sudo systemctl daemon-reload
-    run::sudo systemctl enable --now readsb
+    run::sudo systemctl enable readsb
+
+    # `enable --now` does nothing to a unit that is already running, which
+    # would leave the daemon on the previous configuration. Restart explicitly
+    # whenever the config we just wrote actually changed.
+    #
+    # is-active is read-only, so it is queried in dry-run too: that way the
+    # printed command is the one a real run would issue.
+    if systemctl is-active --quiet readsb 2>/dev/null; then
+        if [[ "${READSB_NEEDS_RESTART:-false}" == true ]]; then
+            log::info "$(t rsb_restarting)"
+            run::sudo systemctl restart readsb
+        fi
+    else
+        run::sudo systemctl start readsb
+    fi
 
     [[ "$DRY_RUN" == true ]] && return 0
 

@@ -102,6 +102,7 @@ tar1090::fix_lighttpd_include() {
     fi
 
     log::info "$(t tar_include_add)"
+    LIGHTTPD_NEEDS_RESTART=true
     if [[ "$DRY_RUN" == true ]]; then
         log::dry_run "echo 'include_shell \"cat ${LIGHTTPD_CONF_ENABLED}/*.conf\"' | sudo tee -a $LIGHTTPD_CONF"
     else
@@ -132,11 +133,23 @@ tar1090::fix_mod_redirect() {
     log::info "$(t tar_redirect_add)"
     run::sudo_write "$available" "$(printf '%s\nserver.modules += ( "mod_redirect" )' "$(t tar_redirect_comment)")"
     run::sudo ln -sf "$available" "$enabled"
+    LIGHTTPD_NEEDS_RESTART=true
 }
 
 tar1090::enable_lighttpd() {
     log::info "$(t tar_lighttpd_enable)"
-    run::sudo systemctl enable --now lighttpd
+    run::sudo systemctl enable lighttpd
+
+    # Same trap as readsb: enabling does not reload a running daemon, and this
+    # is exactly the bug we documented in the upstream installer.
+    if systemctl is-active --quiet lighttpd 2>/dev/null; then
+        if [[ "${LIGHTTPD_NEEDS_RESTART:-false}" == true ]]; then
+            log::info "$(t tar_lighttpd_restart)"
+            run::sudo systemctl restart lighttpd
+        fi
+    else
+        run::sudo systemctl start lighttpd
+    fi
 
     [[ "$DRY_RUN" == true ]] && return 0
 

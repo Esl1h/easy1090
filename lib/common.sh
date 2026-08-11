@@ -38,6 +38,7 @@ declare LOG_LEVEL=2 # 0=error, 1=warn, 2=info, 3=debug
 declare DRY_RUN=false
 declare ASSUME_YES=false
 declare SUDO_KEEPALIVE_PID=""
+declare FILE_CHANGED=false
 
 #===============================================================================
 # LOGGING FUNCTIONS
@@ -155,18 +156,32 @@ run::sudo() {
 
 # Writes a file as root. Kept separate from run::sudo because the redirection
 # has to happen on the privileged side of the pipe, not in our shell.
+#
+# Sets FILE_CHANGED so callers can decide whether a service needs restarting.
+# Without that signal it is easy to write a new config and leave the daemon
+# running on the old one, since `systemctl enable --now` is a no-op on an
+# already running unit.
 run::sudo_write() {
     local path="$1"
     local content="$2"
+
+    FILE_CHANGED=false
 
     if [[ "$DRY_RUN" == true ]]; then
         log::dry_run "sudo tee $path <<'EOF'"
         printf '%s\n' "$content" | sed 's/^/        /' >&2
         log::dry_run "EOF"
+        FILE_CHANGED=true
+        return 0
+    fi
+
+    if [[ -f "$path" ]] && [[ "$(cat "$path" 2>/dev/null)" == "$content" ]]; then
+        log::debug "sem alteração: $path"
         return 0
     fi
 
     log::debug "escrevendo $path"
+    FILE_CHANGED=true
     printf '%s\n' "$content" | sudo tee "$path" >/dev/null
 }
 
@@ -228,15 +243,21 @@ cfg::load() {
         fi
     fi
 
+    # The language was already resolved (and possibly asked) before this point,
+    # and sourcing the file would overwrite it with the empty value the example
+    # ships. Keep the resolved one.
+    local resolved_language="$UI_LANGUAGE"
+
     # shellcheck source=/dev/null
     [[ -f "$config_file" ]] && source "$config_file"
 
+    UI_LANGUAGE="$resolved_language"
     cfg::_apply_defaults
 
-    # Persist the language so the next run does not ask again.
-    if [[ -f "$config_file" && "$DRY_RUN" != true ]]; then
-        grep -qE '^UI_LANGUAGE=' "$config_file" ||
-            cfg::_persist "$config_file" UI_LANGUAGE "$UI_LANGUAGE"
+    # Persist it so the next run does not ask again. Testing for the key is not
+    # enough: the example ships UI_LANGUAGE="", what matters is having a value.
+    if [[ -f "$config_file" && "$DRY_RUN" != true && -z "${UI_LANGUAGE_FROM_CONFIG:-}" ]]; then
+        cfg::_persist "$config_file" UI_LANGUAGE "$UI_LANGUAGE"
     fi
 }
 
@@ -257,7 +278,6 @@ cfg::_apply_defaults() {
     NET_BO_PORT="${NET_BO_PORT:-30005}"
 
     FEEDER_ADSBEXCHANGE="${FEEDER_ADSBEXCHANGE:-false}"
-    FEEDER_FLIGHTAWARE="${FEEDER_FLIGHTAWARE:-false}"
     FEEDER_ASKED="${FEEDER_ASKED:-false}"
 
     TAR1090_INSTALLER_SHA256="${TAR1090_INSTALLER_SHA256:-}"
@@ -311,7 +331,7 @@ cfg::require_feeder() {
     local answer
 
     # Already decided (config edited by hand or previous run), or no one to ask.
-    if [[ "$FEEDER_ADSBEXCHANGE" == true || "$FEEDER_FLIGHTAWARE" == true ]]; then
+    if [[ "$FEEDER_ADSBEXCHANGE" == true ]]; then
         return 0
     fi
     if [[ "$DRY_RUN" == true || "$ASSUME_YES" == true ]]; then
@@ -319,12 +339,12 @@ cfg::require_feeder() {
     fi
     [[ -f "$config_file" ]] && grep -qE '^FEEDER_ASKED="true"' "$config_file" && return 0
 
-    printf '\n%s\n%s\n\n%s\n%s\n%s\n\n' \
+    printf '\n%s\n%s\n\n%s\n%s\n\n%s\n\n' \
         "$(t feed_title)" \
         "$(t feed_explain)" \
         "$(t feed_opt_none)" \
         "$(t feed_opt_adsbx)" \
-        "$(t feed_opt_fa)" >&2
+        "$(t feed_fa_note)" >&2
 
     read -r -p "$(t feed_prompt)" answer
 
@@ -332,12 +352,6 @@ cfg::require_feeder() {
     2)
         FEEDER_ADSBEXCHANGE=true
         cfg::_persist "$config_file" FEEDER_ADSBEXCHANGE "true"
-        log::warn "$(t feed_enabled "ADSBExchange")"
-        ;;
-    3)
-        FEEDER_FLIGHTAWARE=true
-        cfg::_persist "$config_file" FEEDER_FLIGHTAWARE "true"
-        log::warn "$(t feed_enabled "FlightAware")"
         ;;
     *)
         log::info "$(t feed_none)"
