@@ -22,7 +22,7 @@ Feeding a public tracking network is off by default and asked explicitly on firs
 
 Do not open a public issue for a security problem.
 
-Write to **eslih@pm.me**, ideally with a description of the impact and the steps to reproduce it. I will confirm receipt and keep you informed of the fix.
+Write to **not.announced@simplelogin.fr**, ideally with a description of the impact and the steps to reproduce it. I will confirm receipt and keep you informed of the fix.
 
 ## Supported versions
 

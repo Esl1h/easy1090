@@ -24,7 +24,7 @@ This applies to the repository, its issues and pull requests, and any space wher
 
 ## Enforcement
 
-Report unacceptable behaviour to **eslih@pm.me**. Reports are handled confidentially. Whoever maintains the project may remove comments, close discussions or block accounts when necessary.
+Report unacceptable behaviour to **not.announced@simplelogin.fr**. Reports are handled confidentially. Whoever maintains the project may remove comments, close discussions or block accounts when necessary.
 
 ## Attribution
 
