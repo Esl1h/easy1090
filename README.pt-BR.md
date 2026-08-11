@@ -55,6 +55,13 @@ Na primeira execução ele pergunta o idioma da interface (português ou inglês
 --verbose           log em nível debug
 ```
 
+### Mantendo atualizado
+
+```bash
+yay -Syu                 # versões dos pacotes, incluindo readsb e o driver
+./easy1090 install       # converge config e serviços depois da atualização
+```
+
 ### Depois de instalar
 
 ```bash
@@ -82,7 +89,9 @@ E o mapa web em `http://IP-DO-SERVIDOR/tar1090/`.
 
 A configuração vive em `install.conf`, gerado a partir de `install.conf.example` na primeira execução. É shell sourceável, no estilo `/etc/default/*`, sem depender de parser nenhum.
 
-Como o instalador é idempotente, o arquivo funciona como declaração do estado desejado da máquina: rodar de novo converge para o que está escrito lá. Não existe modo `--update` separado, re-rodar **é** o update.
+Como o instalador é idempotente, o arquivo funciona como declaração do estado desejado da máquina: rodar de novo converge para o que está escrito lá. Não existe modo `--update` separado, nem distinção entre primeira execução e as seguintes.
+
+O que ele converge é **configuração e serviços**, não versão de pacote. Se um componente já está instalado, o easy1090 não mexe: manter os pacotes em dia é trabalho do `yay -Syu`, e isso é proposital. Puxar uma versão nova do AUR por conta própria poderia iniciar uma recompilação de 45 minutos sem aviso, o que não é decisão de um instalador.
 
 Dois pontos que merecem atenção antes da primeira execução:
 

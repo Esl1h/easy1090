@@ -55,6 +55,13 @@ On first run it asks for your interface language (Portuguese or English), your a
 --verbose           debug level logging
 ```
 
+### Keeping it current
+
+```bash
+yay -Syu                 # package versions, including readsb and the driver
+./easy1090 install       # converges config and services after an update
+```
+
 ### After installing
 
 ```bash
@@ -82,7 +89,9 @@ And the web map at `http://YOUR-SERVER-IP/tar1090/`.
 
 Configuration lives in `install.conf`, created from `install.conf.example` on first run. It is plain sourceable shell, in the `/etc/default/*` style, with no parser dependency.
 
-Because the installer is idempotent, that file works as a declaration of the desired state of the machine: running it again converges to whatever is written there. There is no separate `--update` mode, re-running **is** the update.
+Because the installer is idempotent, that file works as a declaration of the desired state of the machine: running it again converges to whatever is written there. There is no separate `--update` mode, and no first run versus later run distinction.
+
+What that converges is **configuration and services**, not package versions. If a component is already installed, easy1090 leaves it alone: keeping your packages current is `yay -Syu`, deliberately. Pulling a new AUR version behind your back could start a 45 minute rebuild with no warning, which is not something an installer should decide for you.
 
 Two settings worth reading before the first run:
 

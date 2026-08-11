@@ -13,7 +13,7 @@ First release. Tested end to end on a clean Omarchy (Arch) machine with an RTL-S
 ### Added
 
 - Single `easy1090` entrypoint with subcommands: `install`, `uninstall`, `status`, `start`, `stop`, `restart` and `open`. `status` and `open` never escalate privileges.
-- Idempotent install: re-running is the update, and every module detects what is already in place and skips it.
+- Idempotent install: every module detects what is already in place and skips it, so re-running converges configuration and services. Package versions are left to `yay -Syu`.
 - `--dry-run` that runs the full read-only preflight and prints the exact commands it would execute.
 - Interface in English and Portuguese, chosen on first run and remembered in the config.
 - Map links (OpenStreetMap, Google Maps, latlong.net) when asking for the antenna coordinates.
