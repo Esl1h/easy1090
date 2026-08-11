@@ -13,7 +13,7 @@ jobs:
     name: Shell lint and syntax
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Install shellcheck
         run: sudo apt-get update -q && sudo apt-get install -y shellcheck
@@ -31,7 +31,7 @@ jobs:
     name: Translation catalogs
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       # A missing key does not crash at runtime (t() falls back to the key
       # itself), so nothing would tell you a translation is absent until a user
@@ -75,7 +75,7 @@ jobs:
     name: Vendored installer pin
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       # The vendored script runs as root. The pin in install.conf.example is
       # what proves the committed bytes are the reviewed ones.
@@ -94,7 +94,7 @@ jobs:
     name: Non-Arch guard
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       # The runner is Ubuntu, so the preflight has to refuse. This is the only
       # end to end behaviour testable without an RTL-SDR attached.
