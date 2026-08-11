@@ -71,3 +71,9 @@ A correção é o `run::sudo_write` sinalizar se o conteúdo mudou de fato (`FIL
 ### `rtl_test` falha quando o readsb está rodando
 
 Numa reexecução, o `readsb` já detém o dispositivo, então o `rtl_test` enumera a placa mas não consegue reivindicar a interface, terminando com `usb_claim_interface error -6`. Isso não é defeito: é o sistema saudável. O módulo do driver reconhece essa saída e pula o teste, em vez de avisar que não identificou o tuner.
+
+### Arquivo de config existir não significa que o serviço o carregou
+
+Continuação do item anterior, e a parte que a primeira correção não cobriu. Na terceira execução real o `mod_redirect` aparecia como `[SKIP] já habilitado`, porque o arquivo e o symlink existiam, mas a URL sem barra final continuava devolvendo 404. O motivo: o arquivo foi criado às 15:45 por uma execução anterior que não reiniciou o lighttpd, e o daemon estava no ar desde 15:39. Presença do arquivo não prova que o processo o leu.
+
+A correção é o `svc::predates_file`, que compara o `ActiveEnterTimestamp` da unidade com o mtime do arquivo. Se o serviço subiu antes do arquivo ser escrito, ele não pode tê-lo carregado, e o restart é agendado mesmo no caminho de `[SKIP]`.

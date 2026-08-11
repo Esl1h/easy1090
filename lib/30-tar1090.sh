@@ -98,6 +98,7 @@ tar1090::fix_lighttpd_include() {
 
     if grep -q "conf-enabled" "$LIGHTTPD_CONF"; then
         log::skip "$(t tar_include_ok)"
+        svc::predates_file lighttpd "$LIGHTTPD_CONF" && LIGHTTPD_NEEDS_RESTART=true
         return 0
     fi
 
@@ -127,6 +128,9 @@ tar1090::fix_mod_redirect() {
 
     if [[ -f "$available" && -e "$enabled" ]]; then
         log::skip "$(t tar_redirect_ok)"
+        # Present is not the same as loaded: a lighttpd started before this file
+        # was written is still serving without it.
+        svc::predates_file lighttpd "$available" && LIGHTTPD_NEEDS_RESTART=true
         return 0
     fi
 

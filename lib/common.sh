@@ -167,22 +167,52 @@ run::sudo_write() {
 
     FILE_CHANGED=false
 
+    # The comparison runs in dry-run too, otherwise the preview would claim a
+    # change (and a service restart) on every run.
+    if [[ -f "$path" ]] && [[ "$(cat "$path" 2>/dev/null)" == "$content" ]]; then
+        log::debug "sem alteração: $path"
+        return 0
+    fi
+
+    FILE_CHANGED=true
+
     if [[ "$DRY_RUN" == true ]]; then
         log::dry_run "sudo tee $path <<'EOF'"
         printf '%s\n' "$content" | sed 's/^/        /' >&2
         log::dry_run "EOF"
-        FILE_CHANGED=true
-        return 0
-    fi
-
-    if [[ -f "$path" ]] && [[ "$(cat "$path" 2>/dev/null)" == "$content" ]]; then
-        log::debug "sem alteração: $path"
         return 0
     fi
 
     log::debug "escrevendo $path"
     FILE_CHANGED=true
     printf '%s\n' "$content" | sudo tee "$path" >/dev/null
+}
+
+#===============================================================================
+# SERVICE STATE
+#===============================================================================
+
+# True when the unit has been running since before the file was last written,
+# which means it cannot possibly have loaded it.
+#
+# This closes the gap that "the config file exists" leaves open: a previous run
+# may have written it and skipped the restart, so presence alone never proves
+# the daemon is actually using it.
+svc::predates_file() {
+    local unit="$1"
+    local file="$2"
+    local started file_mtime
+
+    [[ -f "$file" ]] || return 1
+    systemctl is-active --quiet "$unit" 2>/dev/null || return 1
+
+    started="$(systemctl show "$unit" -p ActiveEnterTimestamp --value 2>/dev/null)"
+    [[ -n "$started" ]] || return 1
+
+    started="$(date -d "$started" +%s 2>/dev/null)" || return 1
+    file_mtime="$(stat -c %Y "$file" 2>/dev/null)" || return 1
+
+    [[ "$started" -lt "$file_mtime" ]]
 }
 
 #===============================================================================

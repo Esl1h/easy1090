@@ -113,6 +113,12 @@ readsb::configure() {
         "$receiver_options" "$decoder_options" "$net_options" "$json_options")"
 
     READSB_NEEDS_RESTART="$FILE_CHANGED"
+
+    # Covers the case where a previous run wrote the config but never restarted:
+    # the file is unchanged now, yet the daemon predates it.
+    svc::predates_file readsb "$READSB_DEFAULTS" && READSB_NEEDS_RESTART=true
+
+    return 0
 }
 
 readsb::enable() {
