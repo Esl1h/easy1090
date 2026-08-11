@@ -1,0 +1,89 @@
+#===============================================================================
+# easy1090 - configuração
+#
+# Shell sourceável, no estilo /etc/default/*. Copie para install.conf (o
+# install.sh faz isso na primeira execução) e ajuste.
+#
+# Este arquivo é a declaração do estado desejado da máquina: como o instalador
+# é idempotente, rodar de novo converge para o que está aqui.
+#===============================================================================
+
+#-------------------------------------------------------------------------------
+# Receptor
+#-------------------------------------------------------------------------------
+
+# Posição da antena, em graus decimais. Usada para calcular alcance e distância
+# das aeronaves. Sem isso o instalador pergunta na primeira execução.
+RECEIVER_LAT=""
+RECEIVER_LON=""
+
+# Ganho do tuner. "auto" resolve bem na maioria dos casos; um valor fixo (ex:
+# 49.6) pode render mais em ambiente com muita interferência.
+RECEIVER_GAIN="auto"
+
+# Correção de frequência em ppm. A RTL-SDR Blog V4 tem TCXO de 1 ppm, então 0
+# costuma bastar. Dongles com cristal comum podem precisar de ajuste.
+RECEIVER_PPM="0"
+
+#-------------------------------------------------------------------------------
+# Decodificador
+#-------------------------------------------------------------------------------
+
+# Alcance máximo aceito, em milhas náuticas. Posições além disso são
+# descartadas como ruído.
+DECODER_MAX_RANGE="450"
+
+# Precisão da posição do receptor exposta no JSON e no mapa:
+#   0 = não publica    1 = aproximada    2 = exata
+# Se o mapa for acessível fora da sua rede, considere 1 ou 0.
+JSON_LOCATION_ACCURACY="2"
+
+#-------------------------------------------------------------------------------
+# Componentes
+#-------------------------------------------------------------------------------
+
+# Mapa web ao vivo. É o que transforma streams de texto em algo utilizável.
+COMPONENT_TAR1090="true"
+
+# Companheiros gráficos, nenhum deles decodifica ADS-B.
+# SDR++ mostra o espectro/waterfall; SatDump é para satélites em 137 MHz.
+# O build do SatDump leva cerca de 45 minutos.
+COMPONENT_SDRPP="false"
+COMPONENT_SATDUMP="false"
+
+#-------------------------------------------------------------------------------
+# Rede (portas do readsb)
+#-------------------------------------------------------------------------------
+
+NET_RI_PORT="30001"        # Beast in (raw in)
+NET_RO_PORT="30002"        # raw out
+NET_SBS_PORT="30003"       # SBS/BaseStation out (CSV, bom para grep e log)
+NET_BI_PORT="30004,30104"  # Beast in
+NET_BO_PORT="30005"        # Beast out (é daqui que o viewadsb lê)
+
+#-------------------------------------------------------------------------------
+# Feeders (desabilitados por padrão)
+#-------------------------------------------------------------------------------
+
+# Habilitar qualquer um destes compartilha os seus dados e a posição do seu
+# receptor com um terceiro. É opt-in por decisão, não por esquecimento.
+FEEDER_ADSBEXCHANGE="false"
+FEEDER_FLIGHTAWARE="false"
+
+#-------------------------------------------------------------------------------
+# Pins
+#-------------------------------------------------------------------------------
+
+# Checksum do instalador do tar1090 vendorizado em vendor/. O script roda como
+# root, então uma alteração inesperada precisa abortar a execução.
+# Para atualizar: baixe a versão nova, confira o diff, rode sha256sum e troque
+# o valor abaixo.
+TAR1090_INSTALLER_SHA256="5f1cbfa1561e709f66c29bb1bf18794eb9b1fcfdcf1b00df9f3d97bc2ab9a95f"
+
+#-------------------------------------------------------------------------------
+# Preferências
+#-------------------------------------------------------------------------------
+
+# Emulador de terminal preferido para o open.sh. Vazio usa $TERMINAL e depois
+# tenta foot, kitty, alacritty, konsole, gnome-terminal e xterm, nessa ordem.
+PREFERRED_TERMINAL=""
