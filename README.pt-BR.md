@@ -1,5 +1,7 @@
 # easy1090
 
+[English](README.md) · **Português**
+
 Instalador do stack ADS-B completo (RTL-SDR + readsb + tar1090) em um comando, para Arch e derivados.
 
 Guias de ADS-B quase sempre assumem Raspberry Pi OS ou Debian: os scripts oficiais usam `apt-get`, o `lighttpd` do Debian já vem com a estrutura `conf.d`/`conf-enabled` pronta e os pacotes AUR de decodificadores antigos não são testados contra o GCC atual. Cada um desses pontos custa depuração real numa distro Arch-based. O easy1090 é a automação disso, com os atritos já resolvidos.
@@ -29,10 +31,13 @@ Antes de rodar qualquer coisa como root na sua máquina, veja o que ele faria:
 
 O `--dry-run` roda o preflight inteiro (que é só leitura) e imprime os comandos exatos, não descrições deles. É o mesmo texto que você poderia copiar e colar no terminal.
 
+Na primeira execução ele pergunta o idioma da interface (português ou inglês), as coordenadas da sua antena e se você quer compartilhar dados com uma rede pública de rastreamento de voos. Os três ficam gravados no `install.conf`.
+
 ### Opções
 
 ```
 --full              instala tudo, inclusive SDR++ e SatDump
+--lang <pt|en>      idioma da interface
 --lat <graus>       latitude da antena (ex: -23.58)
 --lon <graus>       longitude da antena (ex: -46.55)
 --skip-tar1090      não instala o mapa web
@@ -63,7 +68,7 @@ Dois pontos que merecem atenção antes da primeira execução:
 
 `JSON_LOCATION_ACCURACY` controla a precisão da posição do seu receptor exposta no JSON e no mapa. O padrão é exata; se o mapa for acessível fora da sua rede, considere baixar para aproximada ou não publicar.
 
-`FEEDER_ADSBEXCHANGE` e `FEEDER_FLIGHTAWARE` vêm desligados. Habilitar qualquer um compartilha seus dados e sua posição com terceiros, então é opt-in por decisão, não por esquecimento.
+`FEEDER_ADSBEXCHANGE` e `FEEDER_FLIGHTAWARE` vêm desligados. Habilitar qualquer um compartilha seus dados e sua posição com terceiros, então é opt-in por decisão, não por esquecimento. O instalador pergunta isso explicitamente na primeira execução.
 
 ## O que ele resolve por você
 
@@ -78,6 +83,8 @@ O `blacklist` no modprobe.d só impede o autoload no boot. No hotplug o udev ped
 A regra `udev` padrão libera o dongle para o grupo `plugdev`, o que basta para um usuário interativo porque o systemd-logind adiciona uma ACL de sessão. O usuário de serviço do readsb não tem sessão nem ACL, então precisa de uma regra dedicada ao grupo dele. O problema se esconde justamente porque funciona quando você testa na mão.
 
 O `lighttpd.conf` do pacote Arch é minimalista e nunca inclui `conf-enabled`, então toda a configuração que o instalador do tar1090 grava lá fica morta, sem erro nenhum.
+
+O Arch não carrega o `mod_redirect`, então o `url.redirect` do tar1090 é ignorado e a URL sem barra final devolve 404, que é justamente a URL anunciada pelo instalador ao terminar.
 
 O instalador do tar1090 só reinicia o lighttpd se ele já estava rodando; um lighttpd recém-instalado continua parado e desabilitado.
 
@@ -104,6 +111,8 @@ easy1090/
 ├── install.conf.example    configuração de referência
 ├── lib/
 │   ├── common.sh           log, execução com dry-run, sudo, config
+│   ├── i18n.sh             seleção de idioma e tradução
+│   ├── i18n/{pt,en}.sh     catálogos de mensagens
 │   ├── pkg-arch.sh         camada de gerenciador de pacotes
 │   ├── 00-preflight.sh     checagens read-only
 │   ├── 10-driver.sh        fork da RTL-SDR Blog e blacklist do DVB
@@ -127,7 +136,7 @@ Se você quer entender antes de rodar um script de root, comece por lá.
 
 ## Estado
 
-Em desenvolvimento. Testado em EndeavourOS com RTL-SDR Blog V4. Veja [KNOWN_ISSUES.md](KNOWN_ISSUES.md).
+Em desenvolvimento. Testado em EndeavourOS e Omarchy com RTL-SDR Blog V4. Veja [KNOWN_ISSUES.md](KNOWN_ISSUES.md).
 
 ## Licença
 
