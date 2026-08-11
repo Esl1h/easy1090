@@ -214,6 +214,11 @@ cfg::load() {
         log::warn "Config não encontrada em $config_file"
         if [[ "$DRY_RUN" == true ]]; then
             log::dry_run "cp $example_file $config_file"
+            # Nothing is written in dry-run, so read the example instead. Without
+            # this the run reports defaults that differ from what a real install
+            # would use (the checksum pin, for one).
+            # shellcheck source=/dev/null
+            source "$example_file"
         else
             util::confirm "Criar a partir de $(basename "$example_file")?" ||
                 util::die "Sem config não dá pra seguir. Copie o exemplo e edite."
