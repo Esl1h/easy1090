@@ -77,6 +77,12 @@ i18n::prompt() {
     esac
 }
 
+# Reads UI_LANGUAGE from the config without sourcing it: this runs before
+# cfg::load, and an empty value has to read as "not set".
+i18n::_from_config() {
+    grep -E '^UI_LANGUAGE=' "$1" 2>/dev/null | head -1 | cut -d'"' -f2
+}
+
 i18n::init() {
     local config_file="$1"
     local cli_lang="$2"
@@ -90,8 +96,9 @@ i18n::init() {
             exit 1
         }
         UI_LANGUAGE="$cli_lang"
-    elif [[ -f "$config_file" ]] && grep -qE '^UI_LANGUAGE=' "$config_file"; then
-        UI_LANGUAGE="$(grep -E '^UI_LANGUAGE=' "$config_file" | head -1 | cut -d'"' -f2)"
+    elif [[ -f "$config_file" ]] && [[ -n "$(i18n::_from_config "$config_file")" ]]; then
+        UI_LANGUAGE="$(i18n::_from_config "$config_file")"
+        UI_LANGUAGE_FROM_CONFIG="$UI_LANGUAGE"
     elif [[ "$ASSUME_YES" == true || ! -t 0 ]]; then
         UI_LANGUAGE="$detected"
     else
