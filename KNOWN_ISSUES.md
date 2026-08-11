@@ -77,3 +77,13 @@ Numa reexecução, o `readsb` já detém o dispositivo, então o `rtl_test` enum
 Continuação do item anterior, e a parte que a primeira correção não cobriu. Na terceira execução real o `mod_redirect` aparecia como `[SKIP] já habilitado`, porque o arquivo e o symlink existiam, mas a URL sem barra final continuava devolvendo 404. O motivo: o arquivo foi criado às 15:45 por uma execução anterior que não reiniciou o lighttpd, e o daemon estava no ar desde 15:39. Presença do arquivo não prova que o processo o leu.
 
 A correção é o `svc::predates_file`, que compara o `ActiveEnterTimestamp` da unidade com o mtime do arquivo. Se o serviço subiu antes do arquivo ser escrito, ele não pode tê-lo carregado, e o restart é agendado mesmo no caminho de `[SKIP]`.
+
+### `--removemake` do yay quebra dependências opcionais
+
+Descoberto testando `--full` numa máquina limpa. O easy1090 chamava o yay com `--removemake`, que descarta os pacotes instalados como dependência de build depois que o build termina. Parece limpeza sensata, e é exatamente o oposto disso.
+
+Pacotes do AUR frequentemente listam a mesma biblioteca em `makedepends` e em `optdepends`: ela é necessária para compilar um plugin e necessária de novo, em runtime, para carregá-lo. O yay enxerga só o lado de build e remove. O programa continua instalado, os plugins continuam no disco, e nada reclama.
+
+Medido no `sdrpp-git`: 24 pacotes removidos ao final da instalação, deixando 10 plugins sem suas bibliotecas, entre eles o `audio_sink.so`, ou seja, o SDR++ ficou sem saída de áudio. Nenhuma mensagem de erro em lugar nenhum.
+
+A correção é não usar `--removemake`. O custo é deixar o ferramental de build no disco, recuperável com `yay -Yc` por quem se importar mais com espaço do que com os plugins funcionando.

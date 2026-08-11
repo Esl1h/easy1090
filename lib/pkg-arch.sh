@@ -68,7 +68,17 @@ pkg::install_aur() {
 
     util::require_command yay
     log::info "$(t pkg_aur "$package")"
-    run::cmd yay -S --answerclean All --answerdiff None --removemake --noconfirm "$package"
+
+    # Deliberately without --removemake. AUR packages routinely list the same
+    # library in both makedepends and optdepends: needed to build a plugin, and
+    # needed again at runtime to load it. yay only sees the make side and
+    # removes it, leaving the program installed with broken plugins and no
+    # error anywhere. Measured on sdrpp-git: 10 plugins lost their libraries,
+    # including the audio sink.
+    #
+    # The cost is leaving build tooling (cmake and friends) on disk. Reclaim it
+    # with `yay -Yc` if that matters more than the plugins working.
+    run::cmd yay -S --answerclean All --answerdiff None --noconfirm "$package"
 }
 
 # Builds an AUR package outside ~/.cache/yay.
