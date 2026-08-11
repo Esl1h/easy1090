@@ -87,3 +87,17 @@ AUR packages routinely list the same library in both `makedepends` and `optdepen
 Measured on `sdrpp-git`: 24 packages removed at the end of the install, leaving 10 plugins without their libraries, among them `audio_sink.so`, which means SDR++ ended up with no audio output. No error message anywhere.
 
 The fix is not to use `--removemake`. The cost is leaving build tooling on disk, reclaimable with `yay -Yc` by anyone who cares more about space than about the plugins working.
+
+### readsb is invisible to yay's update check
+
+Not a defect, but a consequence worth writing down. readsb is built with `makepkg` from a fresh clone, outside yay, so that a `prepare()` patch stays possible when a new GCC breaks the build (see the first entry). The side effect is that yay never records it in its VCS database, so `yay -Syu --devel` will not offer an update for it, ever.
+
+Measured on the reference server after a full system update: `rtl-sdr-blog-git`, `sdrpp-git` and `airspyhf-git` were tracked and checked, while `readsb-wiedehopf-git` sat at commit `g0bfd047` with upstream already at `d418ad6`.
+
+Two separate things bite here, and the second surprises people who know the first:
+
+`yay -Syu` alone never updates a `-git` package. It compares the installed version with the one declared in the AUR, and for a VCS package that string does not change when upstream commits. You need `yay -Syu --devel`, which checks the actual git HEAD.
+
+Even with `--devel`, yay only checks devel packages **it** built. Anything installed by hand with `makepkg` is not in `~/.cache/yay/vcs.json` and is skipped silently.
+
+The documented way to move readsb forward is to remove the package and re-run the installer, which rebuilds from a fresh clone of upstream HEAD. See the README.
