@@ -62,14 +62,17 @@ yay -Syu --devel         # pacotes AUR git instalados pelo yay: driver e SDR++
 ./easy1090 install       # converge config e serviços depois da atualização
 ```
 
-O `--devel` não é opcional aqui: todo pacote AUR deste stack é `-git`, e um `yay -Syu` simples compara com a versão declarada no AUR, que não muda quando o upstream commita. Sem ele, nada nunca é atualizado.
-
-**O readsb é a exceção.** Ele é compilado com `makepkg` fora do yay, de propósito, para que um patch em `prepare()` continue possível quando um GCC novo quebrar o build. O custo é que o yay não o rastreia e nunca vai oferecer atualização para ele. Para levá-lo ao commit atual do upstream:
+Ou deixe o easy1090 cuidar das duas metades:
 
 ```bash
-sudo pacman -R readsb-wiedehopf-git
-./easy1090 install       # recompila a partir de um clone novo do HEAD
+./easy1090 update
 ```
+
+Ele roda o `yay -Syu --devel` e depois trata o readsb à parte, porque o readsb precisa de tratamento à parte.
+
+O `--devel` não é opcional: todo pacote AUR deste stack é `-git`, e um `yay -Syu` simples compara com a versão declarada no AUR, que não muda quando o upstream commita. Sem ele nada nunca é atualizado.
+
+**E o readsb é invisível até para o `--devel`.** Ele é compilado com `makepkg` fora do yay, de propósito, para que um patch em `prepare()` continue possível quando um GCC novo quebrar o build. O custo é que o yay nunca o registra no banco de VCS dele, então nunca o verifica. O `easy1090 update` compara o commit instalado com o HEAD do upstream por conta própria e oferece recompilar.
 
 Para saber em que ponto você está, use `pacman -Q readsb-wiedehopf-git`: o sufixo `.gXXXXXXX` é o commit do upstream em que ele foi compilado.
 
@@ -157,6 +160,7 @@ easy1090/
 │   ├── i18n/{pt,en}.sh     catálogos de mensagens
 │   ├── pkg-arch.sh         camada de gerenciador de pacotes
 │   ├── cmd-install.sh      comando install
+│   ├── cmd-update.sh       comando update
 │   ├── cmd-uninstall.sh    comando uninstall
 │   ├── cmd-status.sh       comando status (somente leitura)
 │   ├── cmd-service.sh      start / stop / restart

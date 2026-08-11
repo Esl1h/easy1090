@@ -6,6 +6,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+### Added
+
+- `easy1090 update`, for package versions. It runs `yay -Syu --devel` and then compares readsb's installed commit with upstream HEAD, because readsb is built outside yay and no yay flag will ever check it.
+
+### Fixed
+
+- `declare` at file level in the command modules created function-local variables that vanished, since the modules are sourced from inside a function. `declare -g` now. This had made `uninstall` fail on an unbound variable after the single-entrypoint refactor.
+
 ## [0.1.0] - 2026-08-11
 
 First release. Tested end to end on a clean Omarchy (Arch) machine with an RTL-SDR Blog V4.

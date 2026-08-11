@@ -13,6 +13,9 @@
 
 readonly READSB_PACKAGE="readsb-wiedehopf-git"
 readonly READSB_CONFLICTS="readsb-git"
+# Used by the update command to compare the installed commit with HEAD. The
+# package name above already pins which fork this is.
+readonly READSB_UPSTREAM="https://github.com/wiedehopf/readsb"
 readonly READSB_BUILD_DIR="${HOME}/.cache/easy1090/readsb-wiedehopf-git"
 readonly READSB_DEFAULTS="/etc/default/readsb"
 readonly READSB_UDEV_RULE="/etc/udev/rules.d/99-readsb-rtlsdr.rules"

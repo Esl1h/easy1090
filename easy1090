@@ -122,6 +122,10 @@ main() {
         banner
         "cmd::${COMMAND}" "${COMMAND_ARGS[@]+"${COMMAND_ARGS[@]}"}"
         ;;
+    update)
+        banner
+        cmd::update "${COMMAND_ARGS[@]+"${COMMAND_ARGS[@]}"}"
+        ;;
     *)
         log::error "$(t cmd_unknown "$COMMAND")"
         t main_usage "$EASY1090_VERSION"

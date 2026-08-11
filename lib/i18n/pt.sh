@@ -305,7 +305,7 @@ Não remove lighttpd nem jq, que são pacotes de uso geral.
 #-------------------------------------------------------------------------------
 # Entrypoint, services and open
 #-------------------------------------------------------------------------------
-MSG[main_usage]="easy1090 %s - stack ADS-B em um comando (Arch e derivados)\n\nUSO\n    easy1090 <comando> [opções]\n\nCOMANDOS\n    install       instala o stack (idempotente, seguro reexecutar)\n    uninstall     desfaz a instalação (best-effort)\n    status        o que está rodando, o que caiu, o que falta\n    start         sobe readsb, lighttpd e tar1090\n    stop          derruba os três\n    restart       reinicia os três, na ordem certa\n    open [alvo]   abre um componente (sem alvo, lista as opções)\n\nOPÇÕES GLOBAIS\n    --lang <pt|en>   idioma da interface\n    --dry-run        imprime os comandos exatos, sem executar\n    --yes            não pergunta nada (exceto a senha do sudo)\n    --verbose        log em nível debug\n    --version        mostra a versão\n    -h, --help       esta ajuda\n\nUse \"easy1090 <comando> --help\" para as opções de cada comando.\n\nstatus e open não precisam de sudo.\n"
+MSG[main_usage]="easy1090 %s - stack ADS-B em um comando (Arch e derivados)\n\nUSO\n    easy1090 <comando> [opções]\n\nCOMANDOS\n    install       instala o stack (idempotente, seguro reexecutar)\n    update        atualiza versões dos pacotes (o install converge config)\n    uninstall     desfaz a instalação (best-effort)\n    status        o que está rodando, o que caiu, o que falta\n    start         sobe readsb, lighttpd e tar1090\n    stop          derruba os três\n    restart       reinicia os três, na ordem certa\n    open [alvo]   abre um componente (sem alvo, lista as opções)\n\nOPÇÕES GLOBAIS\n    --lang <pt|en>   idioma da interface\n    --dry-run        imprime os comandos exatos, sem executar\n    --yes            não pergunta nada (exceto a senha do sudo)\n    --verbose        log em nível debug\n    --version        mostra a versão\n    -h, --help       esta ajuda\n\nUse \"easy1090 <comando> --help\" para as opções de cada comando.\n\nstatus e open não precisam de sudo.\n"
 MSG[cmd_unknown]="Comando desconhecido: %s"
 MSG[cmd_missing]="Informe um comando. Use --help para ver a lista."
 MSG[svc_step]="Serviços"
@@ -324,3 +324,44 @@ MSG[open_missing]="Comando não encontrado: %s. O componente está instalado?"
 MSG[open_no_display]="Sem sessão gráfica (\$DISPLAY/\$WAYLAND_DISPLAY vazios); não dá para abrir %s aqui."
 MSG[open_url]="Mapa web: %s"
 MSG[open_running]="Rodando: %s"
+
+#-------------------------------------------------------------------------------
+# Update
+#-------------------------------------------------------------------------------
+MSG[upd_step_aur]="Pacotes do AUR rastreados pelo yay"
+MSG[upd_step_readsb]="readsb (compilado fora do yay)"
+MSG[upd_step_services]="Serviços"
+MSG[upd_yay_note]="O --devel é obrigatório: pacote -git não muda de versão no AUR quando o upstream commita."
+MSG[upd_not_installed]="%s não está instalado; nada a atualizar. Use \"easy1090 install\"."
+MSG[upd_readsb_installed]="Instalado: commit %s"
+MSG[upd_readsb_upstream]="Upstream: commit %s"
+MSG[upd_readsb_current]="readsb já está no commit atual do upstream."
+MSG[upd_readsb_behind]="Há commits novos no upstream."
+MSG[upd_readsb_unknown]="Não consegui comparar os commits (sem rede ou formato de versão inesperado); pulando."
+MSG[upd_readsb_confirm]="Recompilar o readsb a partir do HEAD?"
+MSG[upd_readsb_skipped]="readsb mantido na versão atual."
+MSG[upd_readsb_rebuilt]="readsb recompilado a partir do commit %s."
+MSG[upd_services_restart]="Reiniciando %s para carregar os binários novos."
+MSG[upd_services_ok]="Nada mudou; serviços não precisam reiniciar."
+MSG[upd_done]="Atualização concluída."
+MSG[upd_hint_install]="Rode \"easy1090 install\" se quiser reconvergir a configuração também."
+MSG[upd_usage]="easy1090 %s - atualização
+
+USO
+    easy1090 update [opções]
+
+Atualiza as VERSÕES dos pacotes. Para convergir configuração e serviços,
+use \"easy1090 install\".
+
+O que ele faz:
+  1. yay -Syu --devel nos pacotes AUR que o yay rastreia (driver, SDR++, SatDump)
+  2. compara o commit do readsb com o HEAD do upstream e recompila se estiver atrás
+  3. reinicia os serviços cujos binários mudaram
+
+OPÇÕES
+    --skip-aur          não roda o yay, atualiza só o readsb
+    --skip-readsb       não mexe no readsb
+    --dry-run           imprime os comandos exatos, sem executar
+    --yes               não pergunta nada (exceto a senha do sudo)
+    -h, --help          esta ajuda
+"

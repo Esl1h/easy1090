@@ -62,14 +62,17 @@ yay -Syu --devel         # AUR git packages yay installed: the driver, SDR++
 ./easy1090 install       # converges config and services after an update
 ```
 
-`--devel` is not optional here: every AUR package in this stack is a `-git` one, and a plain `yay -Syu` compares against the version declared in the AUR, which does not change when upstream commits. Without it, nothing is ever updated.
-
-**readsb is the exception.** It is built with `makepkg` outside yay, deliberately, so that a `prepare()` patch stays possible when a new GCC breaks the build. The cost is that yay does not track it and will never offer an update for it. To move it to the current upstream commit:
+Or let easy1090 do both halves:
 
 ```bash
-sudo pacman -R readsb-wiedehopf-git
-./easy1090 install       # rebuilds from a fresh clone of upstream HEAD
+./easy1090 update
 ```
+
+It runs `yay -Syu --devel` and then handles readsb separately, because readsb needs handling separately.
+
+`--devel` is not optional: every AUR package in this stack is a `-git` one, and a plain `yay -Syu` compares against the version declared in the AUR, which does not move when upstream commits. Without it nothing is ever updated.
+
+**And readsb is invisible even to `--devel`.** It is built with `makepkg` outside yay, deliberately, so that a `prepare()` patch stays possible when a new GCC breaks the build. The cost is that yay never records it in its VCS database, so it is never checked. `easy1090 update` compares the installed commit with upstream HEAD itself and offers to rebuild.
 
 Check what you are running with `pacman -Q readsb-wiedehopf-git`: the `.gXXXXXXX` suffix is the upstream commit it was built from.
 
@@ -157,6 +160,7 @@ easy1090/
 │   ├── i18n/{pt,en}.sh     message catalogs
 │   ├── pkg-arch.sh         package manager layer
 │   ├── cmd-install.sh      install command
+│   ├── cmd-update.sh       update command
 │   ├── cmd-uninstall.sh    uninstall command
 │   ├── cmd-status.sh       status command (read-only)
 │   ├── cmd-service.sh      start / stop / restart

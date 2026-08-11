@@ -305,7 +305,7 @@ Does not remove lighttpd or jq, which are general purpose packages.
 #-------------------------------------------------------------------------------
 # Entrypoint, services and open
 #-------------------------------------------------------------------------------
-MSG[main_usage]="easy1090 %s - ADS-B stack in one command (Arch and derivatives)\n\nUSAGE\n    easy1090 <command> [options]\n\nCOMMANDS\n    install       install the stack (idempotent, safe to re-run)\n    uninstall     undo the installation (best effort)\n    status        what is running, what fell over, what is missing\n    start         bring up readsb, lighttpd and tar1090\n    stop          bring all three down\n    restart       restart all three, in the right order\n    open [target] open a component (without a target, lists the options)\n\nGLOBAL OPTIONS\n    --lang <pt|en>   interface language\n    --dry-run        print the exact commands, without executing\n    --yes            do not ask anything (except the sudo password)\n    --verbose        debug level logging\n    --version        show version\n    -h, --help       this help\n\nUse \"easy1090 <command> --help\" for per-command options.\n\nstatus and open do not need sudo.\n"
+MSG[main_usage]="easy1090 %s - ADS-B stack in one command (Arch and derivatives)\n\nUSAGE\n    easy1090 <command> [options]\n\nCOMMANDS\n    install       install the stack (idempotent, safe to re-run)\n    update        update package versions (install converges config)\n    uninstall     undo the installation (best effort)\n    status        what is running, what fell over, what is missing\n    start         bring up readsb, lighttpd and tar1090\n    stop          bring all three down\n    restart       restart all three, in the right order\n    open [target] open a component (without a target, lists the options)\n\nGLOBAL OPTIONS\n    --lang <pt|en>   interface language\n    --dry-run        print the exact commands, without executing\n    --yes            do not ask anything (except the sudo password)\n    --verbose        debug level logging\n    --version        show version\n    -h, --help       this help\n\nUse \"easy1090 <command> --help\" for per-command options.\n\nstatus and open do not need sudo.\n"
 MSG[cmd_unknown]="Unknown command: %s"
 MSG[cmd_missing]="Please provide a command. Use --help for the list."
 MSG[svc_step]="Services"
@@ -324,3 +324,44 @@ MSG[open_missing]="Command not found: %s. Is the component installed?"
 MSG[open_no_display]="No graphical session (\$DISPLAY/\$WAYLAND_DISPLAY empty); cannot open %s here."
 MSG[open_url]="Web map: %s"
 MSG[open_running]="Running: %s"
+
+#-------------------------------------------------------------------------------
+# Update
+#-------------------------------------------------------------------------------
+MSG[upd_step_aur]="AUR packages tracked by yay"
+MSG[upd_step_readsb]="readsb (built outside yay)"
+MSG[upd_step_services]="Services"
+MSG[upd_yay_note]="--devel is required: a -git package does not change version in the AUR when upstream commits."
+MSG[upd_not_installed]="%s is not installed; nothing to update. Use \"easy1090 install\"."
+MSG[upd_readsb_installed]="Installed: commit %s"
+MSG[upd_readsb_upstream]="Upstream: commit %s"
+MSG[upd_readsb_current]="readsb is already at the current upstream commit."
+MSG[upd_readsb_behind]="There are new commits upstream."
+MSG[upd_readsb_unknown]="Could not compare commits (no network, or unexpected version format); skipping."
+MSG[upd_readsb_confirm]="Rebuild readsb from HEAD?"
+MSG[upd_readsb_skipped]="readsb left at the current version."
+MSG[upd_readsb_rebuilt]="readsb rebuilt from commit %s."
+MSG[upd_services_restart]="Restarting %s to load the new binaries."
+MSG[upd_services_ok]="Nothing changed; no service needs restarting."
+MSG[upd_done]="Update complete."
+MSG[upd_hint_install]="Run \"easy1090 install\" if you also want to converge the configuration."
+MSG[upd_usage]="easy1090 %s - update
+
+USAGE
+    easy1090 update [options]
+
+Updates package VERSIONS. To converge configuration and services, use
+\"easy1090 install\".
+
+What it does:
+  1. yay -Syu --devel on the AUR packages yay tracks (driver, SDR++, SatDump)
+  2. compares the readsb commit with upstream HEAD and rebuilds if behind
+  3. restarts the services whose binaries changed
+
+OPTIONS
+    --skip-aur          do not run yay, update readsb only
+    --skip-readsb       leave readsb alone
+    --dry-run           print the exact commands, without executing
+    --yes               do not ask anything (except the sudo password)
+    -h, --help          this help
+"

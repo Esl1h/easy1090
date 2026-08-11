@@ -12,7 +12,9 @@
 # License: MIT
 #===============================================================================
 
-declare KEEP_PACKAGES=false
+# -g because these files are sourced from inside load_modules(): a plain
+# declare would create a function-local that vanishes when it returns.
+declare -g KEEP_PACKAGES=false
 
 cmd::uninstall() {
     uninstall::parse_args "$@" || return 1
