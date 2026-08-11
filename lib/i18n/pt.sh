@@ -246,9 +246,55 @@ MSG[drv_busy_v4]="Dongle em uso pelo readsb (RTL-SDR Blog V4); pulando o rtl_tes
 MSG[pkg_installed]="Já instalado: %s"
 MSG[pkg_pacman]="Instalando via pacman: %s"
 MSG[pkg_absent]="Não instalado, nada a remover: %s"
-MSG[pkg_removing]="Removendo pacote conflitante: %s"
+MSG[pkg_removing]="Removendo pacote: %s"
 MSG[pkg_aur]="Instalando via AUR: %s"
 MSG[pkg_clean_build]="Limpando build anterior: %s"
 MSG[pkg_cloning]="Clonando PKGBUILD de %s"
 MSG[pkg_building]="Compilando e instalando (%s)"
 MSG[pkg_build_missing]="Diretório de build não encontrado: %s"
+
+#-------------------------------------------------------------------------------
+# Uninstall
+#-------------------------------------------------------------------------------
+MSG[un_title]="Desinstalação"
+MSG[un_plan]="O que será removido:"
+MSG[un_plan_driver]="  driver      pacote rtl-sdr-blog-git e a blacklist do módulo DVB"
+MSG[un_plan_readsb]="  readsb      serviço, pacote, /etc/default/readsb e a regra udev"
+MSG[un_plan_tar1090]="  tar1090     serviço, arquivos e as configs do lighttpd"
+MSG[un_plan_optional]="  opcionais   SDR++ e SatDump (se instalados)"
+MSG[un_plan_local]="  local       cache de build em ~/.cache/easy1090"
+MSG[un_keep]="O que NÃO será tocado: lighttpd, jq, os usuários de sistema readsb e tar1090, e qualquer coisa que você tenha instalado por fora."
+MSG[un_confirm]="Confirma a remoção?"
+MSG[un_aborted]="Nada foi removido."
+MSG[un_step_tar1090]="tar1090"
+MSG[un_step_readsb]="readsb"
+MSG[un_step_driver]="driver RTL-SDR"
+MSG[un_step_optional]="opcionais"
+MSG[un_nothing]="Nada a remover aqui."
+MSG[un_step_local]="arquivos locais"
+MSG[un_upstream]="Rodando o desinstalador do próprio tar1090 (%s)."
+MSG[un_upstream_missing]="Desinstalador do tar1090 não encontrado; removendo o que o easy1090 criou."
+MSG[un_include_removed]="Removida a linha de include que o easy1090 acrescentou ao lighttpd.conf."
+MSG[un_lighttpd_restart]="Reiniciando o lighttpd."
+MSG[un_stopping]="Parando e desabilitando %s."
+MSG[un_removed]="Removido: %s"
+MSG[un_absent]="Não existe, nada a fazer: %s"
+MSG[un_pkg_kept]="Pacotes preservados (--keep-packages)."
+MSG[un_config_ask]="Remover também o install.conf (suas coordenadas e preferências)?"
+MSG[un_done]="Desinstalação concluída."
+MSG[un_users_note]="Os usuários de sistema readsb e tar1090 continuam existindo; remova à mão com userdel se quiser."
+MSG[un_usage]="easy1090 %s - desinstalador
+
+USO
+    ./uninstall.sh [opções]
+
+OPÇÕES
+    --keep-packages     remove serviços e configs, mas mantém os pacotes
+    --lang <pt|en>      idioma da interface
+    --dry-run           imprime os comandos exatos, sem executar
+    --yes               não pergunta nada (exceto a senha do sudo)
+    --verbose           log em nível debug
+    -h, --help          esta ajuda
+
+Não remove lighttpd nem jq, que são pacotes de uso geral.
+"

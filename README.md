@@ -56,6 +56,15 @@ viewadsb             # live table in the terminal
 nc localhost 30003   # decoded messages in CSV
 ```
 
+To undo it all:
+
+```bash
+./uninstall.sh --dry-run   # see exactly what would be removed
+./uninstall.sh
+```
+
+It calls tar1090's own uninstaller, removes the services, configs and packages easy1090 installed, and deliberately leaves shared packages (`lighttpd`, `jq`) and the system users alone. `--keep-packages` removes only services and configs.
+
 And the web map at `http://YOUR-SERVER-IP/tar1090/`.
 
 ## Configuration
@@ -110,6 +119,7 @@ It is not a daemon nor a configuration panel. It is an installer you run when yo
 easy1090/
 ├── install.sh              entrypoint, orchestrates the modules
 ├── status.sh               per component status (read-only)
+├── uninstall.sh            best effort reversal of the install
 ├── install.conf.example    reference configuration
 ├── lib/
 │   ├── common.sh           logging, dry-run execution, sudo, config

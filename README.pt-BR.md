@@ -56,6 +56,15 @@ viewadsb             # tabela ao vivo no terminal
 nc localhost 30003   # mensagens decodificadas em CSV
 ```
 
+Para desfazer tudo:
+
+```bash
+./uninstall.sh --dry-run   # veja exatamente o que seria removido
+./uninstall.sh
+```
+
+Ele chama o desinstalador do próprio tar1090, remove os serviços, configs e pacotes que o easy1090 instalou, e deliberadamente não toca em pacotes compartilhados (`lighttpd`, `jq`) nem nos usuários de sistema. Com `--keep-packages` remove só serviços e configs.
+
 E o mapa web em `http://IP-DO-SERVIDOR/tar1090/`.
 
 ## Configuração
@@ -110,6 +119,7 @@ Não é um daemon nem um painel de configuração. É um instalador que roda qua
 easy1090/
 ├── install.sh              entrypoint, orquestra os módulos
 ├── status.sh               status de cada componente (somente leitura)
+├── uninstall.sh            reversão best-effort da instalação
 ├── install.conf.example    configuração de referência
 ├── lib/
 │   ├── common.sh           log, execução com dry-run, sudo, config
