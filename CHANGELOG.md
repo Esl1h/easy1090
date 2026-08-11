@@ -6,14 +6,27 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-08-11
+
+Two new commands, both born from things that went wrong on a real machine.
+
 ### Added
 
-- `easy1090 feed`, to enable the ADSBExchange feed and install their statistics package. Their installer aborts on Arch because it calls `adduser`; easy1090 creates the system user and the dependencies first, then runs their script unmodified.
-- `easy1090 update`, for package versions. It runs `yay -Syu --devel` and then compares readsb's installed commit with upstream HEAD, because readsb is built outside yay and no yay flag will ever check it.
+- `easy1090 feed`, to enable the ADSBExchange feed and install their statistics package. Their installer aborts on Arch because it calls `adduser` with no fallback, under `set -e`, so it dies before copying a single file. easy1090 creates the system user and the dependencies first, then runs their script unmodified.
+- `easy1090 update`, for package versions, keeping the separation from `install`, which converges configuration and services. It runs `yay -Syu --devel` and then compares readsb's installed commit with upstream HEAD, because readsb is built outside yay and no yay flag will ever check it.
 
 ### Fixed
 
+- The ADSBExchange stats service installed, reported `active` and did nothing: their `json-status` only looks at `/run/adsbexchange-feed`, while a readsb that feeds directly writes to `/run/readsb`. `USE_OLD_PATH=1` in `/etc/default/adsbexchange-stats` is their own escape hatch, and their installer only writes it on a Raspberry Pi image.
 - `declare` at file level in the command modules created function-local variables that vanished, since the modules are sourced from inside a function. `declare -g` now. This had made `uninstall` fail on an unbound variable after the single-entrypoint refactor.
+- `--dry-run` claimed a config change, and a service restart, on every run: the content comparison was skipped in preview mode.
+- Debug messages and the package layer were still in Portuguese inside an otherwise English codebase.
+
+### Changed
+
+- Documentation no longer says "re-running is the update". Re-running converges configuration and services; package versions are `yay -Syu --devel`, or `easy1090 update`.
+- `install.conf.example` is bilingual, and the dead `PREFERRED_TERMINAL` key is gone. It came from an earlier design of `open` that spawned terminal windows; the shipped one runs in the current terminal on purpose.
+- `KNOWN_ISSUES.md` is in English, like the rest of the project documentation.
 
 ## [0.1.0] - 2026-08-11
 
@@ -44,5 +57,6 @@ These are the frictions the installer encodes. Each one was found on real hardwa
 - `yay --removemake` deletes libraries that AUR packages list as both build and optional runtime dependencies. On sdrpp-git that silently broke 10 plugins, including the audio sink. The flag is gone.
 - `rtl_test` cannot claim the device while readsb holds it, which is a healthy system on a re-run, not a failure.
 
-[Unreleased]: https://github.com/Esl1h/easy1090/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/Esl1h/easy1090/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/Esl1h/easy1090/releases/tag/v0.2.0
 [0.1.0]: https://github.com/Esl1h/easy1090/releases/tag/v0.1.0

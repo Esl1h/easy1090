@@ -18,7 +18,7 @@ readonly _EASY1090_COMMON_LOADED=1
 # CONSTANTS AND GLOBAL STATE
 #===============================================================================
 
-readonly EASY1090_VERSION="0.1.0"
+readonly EASY1090_VERSION="0.2.0"
 
 # Colors for output (disabled if not a TTY)
 if [[ -t 1 ]]; then
