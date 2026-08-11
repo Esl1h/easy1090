@@ -167,9 +167,15 @@ Se você quer entender antes de rodar um script de root, comece por lá.
 
 Relato de bug em instalação real é a contribuição mais útil, porque este projeto existe para codificar atritos que só aparecem em hardware de verdade. Veja o [CONTRIBUTING.md](CONTRIBUTING.md), o [código de conduta](CODE_OF_CONDUCT.md) e a [política de segurança](SECURITY.md).
 
+A interface do programa é bilíngue, mas a documentação de projeto (contribuição, segurança, changelog e problemas conhecidos) fica só em inglês, para ter uma fonte única e não arriscar duas versões divergirem. Este README é a exceção.
+
 ## Estado
 
-Em desenvolvimento. Testado de ponta a ponta em EndeavourOS e Omarchy com RTL-SDR Blog V4. As mudanças ficam no [CHANGELOG.md](CHANGELOG.md), e os atritos encontrados no caminho, com suas causas, no [KNOWN_ISSUES.md](KNOWN_ISSUES.md).
+Versão atual: [v0.1.0](https://github.com/Esl1h/easy1090/releases/tag/v0.1.0), testada de ponta a ponta num Omarchy (Arch) limpo com RTL-SDR Blog V4, e no EndeavourOS.
+
+As mudanças ficam no [CHANGELOG.md](CHANGELOG.md). Os atritos encontrados no caminho, com suas causas e o porquê de cada contorno, estão no [KNOWN_ISSUES.md](KNOWN_ISSUES.md), que vale ler antes de abrir uma issue.
+
+Duas coisas ainda não foram exercitadas: o caminho de remoção de um `readsb-git` conflitante do fork Mictronics (precisa de uma máquina que já tenha o fork antigo instalado) e uma execução `--full` completa, com o SatDump.
 
 ## Licença
 

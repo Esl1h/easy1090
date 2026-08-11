@@ -1,89 +1,89 @@
 # Known issues
 
-Changelog vivo dos atritos conhecidos. A regra aqui é documentar antes de corrigir: o histórico da decisão vale mais que o fix isolado, porque esses problemas voltam a cada release do GCC ou mudança de PKGBUILD no AUR.
+A living log of the friction this project knows about. The rule here is to document before fixing: the history of a decision is worth more than the isolated patch, because these problems come back with every GCC release and every PKGBUILD change in the AUR.
 
-## Ativos
+## Open
 
-### O build do readsb quebra com GCC novo (fork Mictronics)
+### The readsb build breaks with a current GCC (Mictronics fork)
 
-O `readsb-git` (fork Mictronics) usa `-Werror` no Makefile e não recebe manutenção desde por volta de 2020. O GCC atual quebra o build de duas formas diferentes:
+`readsb-git` (the Mictronics fork) hardcodes `-Werror` in its Makefile and has had no maintenance since around 2020. A current GCC breaks that build in two different ways.
 
-Primeiro, avisos novos que viram erro por causa do `-Werror` do próprio projeto, como `unterminated-string-initialization` e `format-truncation`. Contornável removendo a flag.
+First, new warnings that become errors because of the project's own `-Werror`, such as `unterminated-string-initialization` and `format-truncation`. Removing the flag is enough for those.
 
-Segundo, e mais traiçoeiro, diagnósticos que o GCC 14 passou a tratar como erro **por padrão**, independentemente de `-Werror`: `incompatible-pointer-types`, `implicit-function-declaration`, `int-conversion` e `implicit-int`. Esses precisam de `-Wno-error=` explícito.
+Second, and more treacherous, diagnostics that GCC 14 started treating as errors **by default**, regardless of `-Werror`: `incompatible-pointer-types`, `implicit-function-declaration`, `int-conversion` and `implicit-int`. Those need an explicit `-Wno-error=`.
 
-O easy1090 usa o fork wiedehopf, que hoje compila limpo, então o problema não aparece. Ficou registrado porque é uma classe de problema que atinge qualquer pacote AUR em C sem manutenção, e porque nada garante que o próximo GCC não faça o mesmo com o fork novo. Se isso acontecer, a correção é um `prepare()` no PKGBUILD, aplicado num diretório copiado (ver o item do yay abaixo).
+easy1090 uses the wiedehopf fork, which currently compiles clean, so this does not bite. It is recorded because it is a class of problem that hits any unmaintained C package in the AUR, and because nothing guarantees the next GCC will not do the same to the newer fork. If that happens, the fix is a `prepare()` in the PKGBUILD, applied in a copied directory (see the yay entry below).
 
-### Instalação sem tty falha ou trava
+### Installing without a tty fails or hangs
 
-Todo passo com `sudo` precisa de terminal real. Rodar via automação, CI ou ponte sem tty faz o `sudo` travar esperando senha ou falhar em silêncio. O preflight detecta e aborta cedo, mas vale repetir: o easy1090 não é feito para rodar sem interação humana no primeiro uso.
+Every `sudo` step needs a real terminal. Running through automation, CI or a bridge without a tty makes `sudo` either hang waiting for a password or fail silently. Preflight detects this and aborts early, but it bears repeating: easy1090 is not built to run unattended on a first install.
 
-### O instalador do tar1090 imprime "adduser: command not found"
+### The tar1090 installer prints "adduser: command not found"
 
-Duas vezes, logo no início. É ruído, não falha: a linha upstream é uma cadeia de fallback, `adduser ... || adduser ... || useradd -r -d "$ipath" -M tar1090`. As duas primeiras formas são Debianismos e não existem no Arch, então o `useradd` final é quem cria o usuário. Confirmado em teste real: o usuário `tar1090` é criado normalmente. Nada a corrigir do nosso lado, mas fica documentado para ninguém se assustar com a mensagem.
+Twice, right at the start. This is noise, not a failure: the upstream line is a fallback chain, `adduser ... || adduser ... || useradd -r -d "$ipath" -M tar1090`. The first two forms are Debianisms that do not exist on Arch, so the final `useradd` is what creates the user. Confirmed on a real install: the `tar1090` user is created normally. Nothing to fix on our side, documented so the message does not alarm anyone.
 
-### lighttpd avisa "unknown config-key: url.redirect (ignored)"
+### lighttpd warns "unknown config-key: url.redirect (ignored)"
 
-Sintoma do mod_redirect ausente, descrito na seção de resolvidos. Se a mensagem voltar a aparecer depois de uma atualização, é sinal de que o arquivo `06-mod_redirect.conf` sumiu ou deixou de ser carregado.
+A symptom of the missing mod_redirect, described in the resolved section. If the message comes back after an update, it means `06-mod_redirect.conf` disappeared or stopped being loaded.
 
-### Sem CI de verdade
+### No real end to end CI
 
-Não dá para testar o caminho completo sem hardware RTL-SDR conectado. O que dá para automatizar é a parte estática: `shellcheck` e testes da lógica pura, como parsing de flags e detecção de distro. A validação de ponta a ponta continua manual, em VM ou máquina física, a cada mudança relevante do AUR ou do GCC.
+The full path cannot be tested without an RTL-SDR attached. What can be automated is the static part: `shellcheck`, syntax checks, catalog consistency, the vendored checksum, and the preflight refusing a non-Arch distro. End to end validation stays manual, on a VM or physical machine, after every relevant change in the AUR or in GCC.
 
-## Resolvidos no código
+## Resolved in the code
 
-Ficam aqui porque, se algum dia o comportamento upstream mudar, o motivo do código existir precisa estar escrito.
+These stay here because, if upstream behaviour ever changes, the reason the code exists needs to be written down somewhere.
 
-### pacman com --noconfirm assume o padrão errado em conflitos
+### pacman with --noconfirm takes the wrong default on conflicts
 
-O prompt de substituição de pacote conflitante é `[s/N]`, e `--noconfirm` responde N, abortando a instalação sem deixar claro o motivo. Por isso remoção de conflito é passo explícito e confirmado, nunca delegada ao `--noconfirm`.
+The prompt to replace a conflicting package is `[y/N]`, and `--noconfirm` answers N, aborting the install without making the reason obvious. That is why removing a conflicting package is an explicit, confirmed step, never delegated to `--noconfirm`.
 
-### yay reseta o PKGBUILD do cache
+### yay resets the cached PKGBUILD
 
-Qualquer edição manual em `~/.cache/yay/<pkg>/PKGBUILD` é descartada na execução seguinte. É proteção correta contra adulteração, mas incompatível com patch manual. Builds que precisam de patch rodam num diretório próprio, fora do controle do yay.
+Any manual edit to `~/.cache/yay/<pkg>/PKGBUILD` is discarded on the next run. It is correct anti-tampering behaviour, and incompatible with manual patching. Builds that need a patch run from their own directory, outside yay's control.
 
-### blacklist de módulo não impede carga por alias
+### Blacklisting a module does not stop it being loaded by alias
 
-`blacklist dvb_usb_rtl28xxu` no modprobe.d só impede o autoload no boot. No hotplug, o udev pede o módulo pelo alias e o kernel entrega, blacklist ou não. Só a diretiva `install dvb_usb_rtl28xxu /bin/false` fecha de fato. Falta em quase todo tutorial, e é a diferença entre um sistema que funciona e um que funciona até você replugar o dongle.
+`blacklist dvb_usb_rtl28xxu` in modprobe.d only stops autoload at boot. On hotplug, udev asks for the module by alias and the kernel hands it over, blacklist or not. Only the `install dvb_usb_rtl28xxu /bin/false` directive actually closes it. This is missing from almost every tutorial, and it is the difference between a system that works and one that works until you replug the dongle.
 
-### Regra udev por grupo não cobre usuário de serviço
+### A group-based udev rule does not cover a service user
 
-A regra padrão do `rtl-sdr` usa `GROUP="plugdev"`. Para o usuário interativo isso parece funcionar porque o systemd-logind concede uma ACL de sessão sobre o dispositivo, o que mascara o problema. O usuário de serviço do readsb não tem sessão, não recebe ACL e leva EACCES. A correção é uma regra dedicada ao grupo do serviço.
+The stock `rtl-sdr` rule uses `GROUP="plugdev"`. For an interactive user this appears to work, because systemd-logind grants a session ACL on the device, which masks the problem. The readsb service user has no session, gets no ACL, and hits EACCES. The fix is a rule dedicated to the service's own group.
 
-### lighttpd do Arch não carrega conf-enabled
+### Arch's lighttpd does not load conf-enabled
 
-O `lighttpd.conf` do pacote Arch tem só o essencial e não inclui nenhum diretório de configuração extra, diferente do Debian. Sem acrescentar o `include_shell`, toda a configuração que o instalador do tar1090 grava fica morta, silenciosamente, e o mapa responde 404 com tudo aparentemente instalado.
+The `lighttpd.conf` shipped by the Arch package has only the essentials and includes no extra configuration directory, unlike Debian. Without adding the `include_shell` line, everything the tar1090 installer writes there is dead config, silently, and the map answers 404 with everything apparently installed.
 
-### mod_redirect não é carregado no Arch, e a URL sem barra final dá 404
+### mod_redirect is not loaded on Arch, and the slash-less URL 404s
 
-O `88-tar1090.conf` gerado pelo instalador usa `url.redirect` para mandar `/tar1090` para `/tar1090/`, mas o instalador só cria carregadores para `mod_alias` e `mod_setenv`. No Debian o `mod_redirect` já vem ligado na configuração base; no Arch não. O lighttpd então avisa `unknown config-key: url.redirect (ignored)` e segue, e a URL sem barra final devolve 404. Pior: é exatamente essa a URL que o instalador anuncia ao terminar. O easy1090 cria um `06-mod_redirect.conf` em `conf-available` e o habilita por symlink.
+The `88-tar1090.conf` generated by the installer uses `url.redirect` to send `/tar1090` to `/tar1090/`, but the installer only creates module loaders for `mod_alias` and `mod_setenv`. On Debian `mod_redirect` is already on in the base config; on Arch it is not. lighttpd then warns `unknown config-key: url.redirect (ignored)` and carries on, and the slash-less URL returns 404. Worse: that is exactly the URL the installer prints when it finishes. easy1090 creates `06-mod_redirect.conf` in `conf-available` and enables it by symlink.
 
-### Instalador do tar1090 não sobe um lighttpd novo
+### The tar1090 installer does not start a fresh lighttpd
 
-O script upstream só reinicia o lighttpd se ele já estava ativo antes. Um lighttpd recém-instalado permanece `inactive (dead)` e desabilitado, mesmo com tudo o mais configurado corretamente.
+The upstream script only restarts lighttpd if it was already active. A freshly installed one stays `inactive (dead)` and disabled, with everything else configured correctly.
 
-### `systemctl enable --now` não aplica config nova em serviço já rodando
+### `systemctl enable --now` does not apply new config to a running service
 
-Descoberto no segundo teste real. O instalador escrevia `/etc/default/readsb` com coordenadas novas e o `enable --now` não fazia nada, porque a unidade já estava ativa. Resultado: o daemon seguia rodando com a configuração anterior, sem erro nenhum, e o `journalctl` mostrava a lat/lon antiga enquanto o arquivo em disco tinha a nova. O mesmo valia para o lighttpd depois de habilitar o `mod_redirect`.
+Found on the second real install. The installer wrote `/etc/default/readsb` with new coordinates and `enable --now` did nothing, because the unit was already active. The result: the daemon kept running on the previous configuration, with no error anywhere, and `journalctl` showed the old lat/lon while the file on disk had the new one. The same applied to lighttpd after enabling `mod_redirect`.
 
-A correção é o `run::sudo_write` sinalizar se o conteúdo mudou de fato (`FILE_CHANGED`), e os módulos fazerem `restart` explícito quando mudou. É a mesma armadilha que já estava documentada no instalador upstream do tar1090, e que acabei repetindo.
+The fix is for `run::sudo_write` to report whether the content actually changed (`FILE_CHANGED`), and for the modules to `restart` explicitly when it did. It is the same trap already documented in the upstream tar1090 installer, which I then reproduced.
 
-### `rtl_test` falha quando o readsb está rodando
+### `rtl_test` fails while readsb is running
 
-Numa reexecução, o `readsb` já detém o dispositivo, então o `rtl_test` enumera a placa mas não consegue reivindicar a interface, terminando com `usb_claim_interface error -6`. Isso não é defeito: é o sistema saudável. O módulo do driver reconhece essa saída e pula o teste, em vez de avisar que não identificou o tuner.
+On a re-run, readsb already owns the device, so `rtl_test` enumerates the card but cannot claim the interface, ending with `usb_claim_interface error -6`. That is not a defect, it is a healthy system. The driver module recognises this output and skips the test instead of warning that it could not identify the tuner.
 
-### Arquivo de config existir não significa que o serviço o carregou
+### A config file existing does not mean the service loaded it
 
-Continuação do item anterior, e a parte que a primeira correção não cobriu. Na terceira execução real o `mod_redirect` aparecia como `[SKIP] já habilitado`, porque o arquivo e o symlink existiam, mas a URL sem barra final continuava devolvendo 404. O motivo: o arquivo foi criado às 15:45 por uma execução anterior que não reiniciou o lighttpd, e o daemon estava no ar desde 15:39. Presença do arquivo não prova que o processo o leu.
+A continuation of the previous entry, and the part the first fix did not cover. On the third real run, `mod_redirect` showed up as `[SKIP] already enabled`, because the file and the symlink existed, yet the slash-less URL still returned 404. The reason: the file had been created at 15:45 by an earlier run that did not restart lighttpd, and the daemon had been up since 15:39. Presence of a file does not prove the process read it.
 
-A correção é o `svc::predates_file`, que compara o `ActiveEnterTimestamp` da unidade com o mtime do arquivo. Se o serviço subiu antes do arquivo ser escrito, ele não pode tê-lo carregado, e o restart é agendado mesmo no caminho de `[SKIP]`.
+The fix is `svc::predates_file`, which compares the unit's `ActiveEnterTimestamp` with the file's mtime. If the service started before the file was written, it cannot have loaded it, and a restart is scheduled even on the `[SKIP]` path.
 
-### `--removemake` do yay quebra dependências opcionais
+### yay's `--removemake` breaks optional dependencies
 
-Descoberto testando `--full` numa máquina limpa. O easy1090 chamava o yay com `--removemake`, que descarta os pacotes instalados como dependência de build depois que o build termina. Parece limpeza sensata, e é exatamente o oposto disso.
+Found while testing `--full` on a clean machine. easy1090 called yay with `--removemake`, which discards packages installed as build dependencies once the build finishes. It looks like sensible housekeeping, and it is the exact opposite.
 
-Pacotes do AUR frequentemente listam a mesma biblioteca em `makedepends` e em `optdepends`: ela é necessária para compilar um plugin e necessária de novo, em runtime, para carregá-lo. O yay enxerga só o lado de build e remove. O programa continua instalado, os plugins continuam no disco, e nada reclama.
+AUR packages routinely list the same library in both `makedepends` and `optdepends`: it is needed to compile a plugin, and needed again at runtime to load it. yay only sees the build side and removes it. The program stays installed, the plugins stay on disk, and nothing complains.
 
-Medido no `sdrpp-git`: 24 pacotes removidos ao final da instalação, deixando 10 plugins sem suas bibliotecas, entre eles o `audio_sink.so`, ou seja, o SDR++ ficou sem saída de áudio. Nenhuma mensagem de erro em lugar nenhum.
+Measured on `sdrpp-git`: 24 packages removed at the end of the install, leaving 10 plugins without their libraries, among them `audio_sink.so`, which means SDR++ ended up with no audio output. No error message anywhere.
 
-A correção é não usar `--removemake`. O custo é deixar o ferramental de build no disco, recuperável com `yay -Yc` por quem se importar mais com espaço do que com os plugins funcionando.
+The fix is not to use `--removemake`. The cost is leaving build tooling on disk, reclaimable with `yay -Yc` by anyone who cares more about space than about the plugins working.

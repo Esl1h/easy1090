@@ -169,7 +169,11 @@ Bug reports from real installations are the most useful contribution, because th
 
 ## Status
 
-Under development. Tested end to end on EndeavourOS and Omarchy with an RTL-SDR Blog V4. Changes are tracked in [CHANGELOG.md](CHANGELOG.md), and the frictions found along the way, with their causes, in [KNOWN_ISSUES.md](KNOWN_ISSUES.md).
+Current release: [v0.1.0](https://github.com/Esl1h/easy1090/releases/tag/v0.1.0), tested end to end on a clean Omarchy (Arch) machine with an RTL-SDR Blog V4, and on EndeavourOS.
+
+Changes are tracked in [CHANGELOG.md](CHANGELOG.md). The frictions found along the way, with their causes and the reasoning behind each workaround, are in [KNOWN_ISSUES.md](KNOWN_ISSUES.md), which is worth reading before opening an issue.
+
+Two things are not yet exercised: the removal path for a conflicting Mictronics `readsb-git` (it needs a machine that already has the old fork installed), and a full `--full` run including SatDump.
 
 ## License
 
