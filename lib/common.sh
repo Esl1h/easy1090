@@ -188,6 +188,26 @@ run::sudo_write() {
     printf '%s\n' "$content" | sudo tee "$path" >/dev/null
 }
 
+# Display width of a UTF-8 string, independent of the caller's locale.
+#
+# ${#var} counts bytes under LC_ALL=C and characters under a UTF-8 locale, and
+# an SSH session often arrives with neither set the way you expect. Counting
+# bytes and discarding UTF-8 continuation bytes (0x80-0xBF) gives the number of
+# glyphs either way, which is what column alignment needs.
+str::width() {
+    local LC_ALL=C
+    local s="$1"
+    local i char n=0
+
+    for ((i = 0; i < ${#s}; i++)); do
+        char="${s:i:1}"
+        [[ "$char" == [$'\x80'-$'\xbf'] ]] && continue
+        n=$((n + 1))
+    done
+
+    printf '%d' "$n"
+}
+
 #===============================================================================
 # SERVICE STATE
 #===============================================================================

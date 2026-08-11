@@ -298,3 +298,26 @@ OPTIONS
 
 Does not remove lighttpd or jq, which are general purpose packages.
 "
+
+#-------------------------------------------------------------------------------
+# Entrypoint, services and open
+#-------------------------------------------------------------------------------
+MSG[main_usage]="easy1090 %s - ADS-B stack in one command (Arch and derivatives)\n\nUSAGE\n    easy1090 <command> [options]\n\nCOMMANDS\n    install       install the stack (idempotent: re-running is the update)\n    uninstall     undo the installation (best effort)\n    status        what is running, what fell over, what is missing\n    start         bring up readsb, lighttpd and tar1090\n    stop          bring all three down\n    restart       restart all three, in the right order\n    open [target] open a component (without a target, lists the options)\n\nGLOBAL OPTIONS\n    --lang <pt|en>   interface language\n    --dry-run        print the exact commands, without executing\n    --yes            do not ask anything (except the sudo password)\n    --verbose        debug level logging\n    --version        show version\n    -h, --help       this help\n\nUse \"easy1090 <command> --help\" for per-command options.\n\nstatus and open do not need sudo.\n"
+MSG[cmd_unknown]="Unknown command: %s"
+MSG[cmd_missing]="Please provide a command. Use --help for the list."
+MSG[svc_step]="Services"
+MSG[svc_acting]="%s: %s"
+MSG[svc_not_installed]="%s is not installed; skipping."
+MSG[svc_done]="Done."
+MSG[open_step]="Open"
+MSG[open_targets]="Available targets:"
+MSG[open_t_viewadsb]="  viewadsb    live table in the terminal (ncurses)"
+MSG[open_t_sbs]="  sbs         decoded message stream (CSV)"
+MSG[open_t_map]="  map         web map in the browser"
+MSG[open_t_sdrpp]="  sdrpp       SDR++ (graphical)"
+MSG[open_t_satdump]="  satdump     SatDump (graphical)"
+MSG[open_unknown]="Unknown target: %s"
+MSG[open_missing]="Command not found: %s. Is the component installed?"
+MSG[open_no_display]="No graphical session (\$DISPLAY/\$WAYLAND_DISPLAY empty); cannot open %s here."
+MSG[open_url]="Web map: %s"
+MSG[open_running]="Running: %s"

@@ -1,28 +1,39 @@
 #!/usr/bin/env bash
 #===============================================================================
-# easy1090 - per component status
+# easy1090 - status command
 #
-# Read-only: does not start, stop or change anything. Meant for a quick glance
-# at what is missing or what fell over.
+# Read-only: does not start, stop or change anything, and never asks for sudo.
+# Meant for a quick glance at what is missing or what fell over.
 #
 # Author: Esli
 # License: MIT
 #===============================================================================
 
-set -euo pipefail
-
-readonly EASY1090_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-readonly CONFIG_FILE="${EASY1090_ROOT}/install.conf"
-
-# shellcheck source=lib/common.sh
-source "${EASY1090_ROOT}/lib/common.sh"
-# shellcheck source=lib/i18n.sh
-source "${EASY1090_ROOT}/lib/i18n.sh"
-# shellcheck source=lib/pkg-arch.sh
-source "${EASY1090_ROOT}/lib/pkg-arch.sh"
-
-readonly READSB_JSON="/run/readsb/aircraft.json"
 readonly RTLSDR_USB_ID="0bda:2838"
+
+cmd::status() {
+    printf "\n${BOLD}easy1090${RESET} %s - %s\n\n" "$EASY1090_VERSION" "$(t sts_title)"
+
+    printf "${BOLD}%s${RESET}\n" "$(t sts_hardware)"
+    status::dongle
+    status::package "$(t sts_driver)" "rtl-sdr-blog-git"
+
+    printf "\n${BOLD}%s${RESET}\n" "$(t sts_decoding)"
+    status::package "readsb" "readsb-wiedehopf-git"
+    status::service "$(t sts_service)" "readsb"
+    status::decoding
+
+    printf "\n${BOLD}%s${RESET}\n" "$(t sts_web)"
+    status::service "lighttpd" "lighttpd"
+    status::service "tar1090" "tar1090"
+    status::web
+
+    printf "\n${BOLD}%s${RESET}\n" "$(t sts_optional)"
+    status::package "SDR++" "sdrpp-git"
+    status::package "SatDump" "satdump"
+
+    printf "\n"
+}
 
 status::line() {
     local name="$1" state="$2" detail="${3:-}"
@@ -34,7 +45,13 @@ status::line() {
     *) color="$YELLOW" ;;
     esac
 
-    printf "  %-16s ${color}%-12s${RESET} %s\n" "$name" "$state" "$detail"
+    # printf pads by bytes, and accented labels ("serviço", "decodificação")
+    # would come out ragged. ${#var} counts characters under a UTF-8 locale, so
+    # the padding is computed by hand.
+    local pad=$((16 - $(str::width "$name")))
+    [[ $pad -lt 1 ]] && pad=1
+
+    printf "  %s%*s${color}%-12s${RESET} %s\n" "$name" "$pad" "" "$state" "$detail"
 }
 
 status::dongle() {
@@ -120,31 +137,3 @@ status::web() {
         status::line "$(t sts_map)" "$(t sts_stopped)" "$(t sts_http "${code:-?}")"
     fi
 }
-
-main() {
-    i18n::init "$CONFIG_FILE" "${1:-}"
-
-    printf "\n${BOLD}easy1090${RESET} %s - %s\n\n" "$EASY1090_VERSION" "$(t sts_title)"
-
-    printf "${BOLD}%s${RESET}\n" "$(t sts_hardware)"
-    status::dongle
-    status::package "$(t sts_driver)" "rtl-sdr-blog-git"
-
-    printf "\n${BOLD}%s${RESET}\n" "$(t sts_decoding)"
-    status::package "readsb" "readsb-wiedehopf-git"
-    status::service "$(t sts_service)" "readsb"
-    status::decoding
-
-    printf "\n${BOLD}%s${RESET}\n" "$(t sts_web)"
-    status::service "lighttpd" "lighttpd"
-    status::service "tar1090" "tar1090"
-    status::web
-
-    printf "\n${BOLD}%s${RESET}\n" "$(t sts_optional)"
-    status::package "SDR++" "sdrpp-git"
-    status::package "SatDump" "satdump"
-
-    printf "\n"
-}
-
-main "$@"

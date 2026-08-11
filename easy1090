@@ -1,0 +1,133 @@
+#!/usr/bin/env bash
+#===============================================================================
+# easy1090 - ADS-B stack in one command
+#
+# Single entrypoint with subcommands:
+#   install, uninstall, status, start, stop, restart, open
+#
+# status and open never escalate privileges; the rest ask for sudo only at the
+# step that needs it.
+#
+# Author: Esli
+# License: MIT
+# Repository: https://github.com/Esl1h/easy1090
+#===============================================================================
+
+set -euo pipefail
+
+readonly EASY1090_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+readonly CONFIG_FILE="${EASY1090_ROOT}/install.conf"
+readonly CONFIG_EXAMPLE="${EASY1090_ROOT}/install.conf.example"
+
+# shellcheck source=lib/common.sh
+source "${EASY1090_ROOT}/lib/common.sh"
+# shellcheck source=lib/i18n.sh
+source "${EASY1090_ROOT}/lib/i18n.sh"
+
+declare COMMAND="" CLI_LANG=""
+declare -a COMMAND_ARGS=()
+
+#===============================================================================
+# GLOBAL ARGUMENTS
+#===============================================================================
+
+# Global flags are accepted anywhere; everything else is handed to the
+# subcommand untouched.
+parse_global() {
+    while [[ $# -gt 0 ]]; do
+        case "$1" in
+        --lang)
+            CLI_LANG="${2:-}"
+            shift
+            ;;
+        --dry-run) DRY_RUN=true ;;
+        --yes | -y) ASSUME_YES=true ;;
+        --verbose) LOG_LEVEL=3 ;;
+        --version)
+            printf 'easy1090 %s\n' "$EASY1090_VERSION"
+            exit 0
+            ;;
+        -h | --help)
+            [[ -z "$COMMAND" ]] && HELP_WANTED=true || COMMAND_ARGS+=("$1")
+            ;;
+        -*)
+            COMMAND_ARGS+=("$1")
+            ;;
+        *)
+            if [[ -z "$COMMAND" ]]; then
+                COMMAND="$1"
+            else
+                COMMAND_ARGS+=("$1")
+            fi
+            ;;
+        esac
+        shift
+    done
+}
+
+load_modules() {
+    local module
+    for module in \
+        "${EASY1090_ROOT}/lib/pkg-${PKG_TARGET:-arch}.sh" \
+        "${EASY1090_ROOT}"/lib/[0-9][0-9]-*.sh \
+        "${EASY1090_ROOT}"/lib/cmd-*.sh; do
+        # shellcheck source=/dev/null
+        source "$module"
+    done
+}
+
+banner() {
+    printf "\n${BOLD}easy1090${RESET} %s\n" "$EASY1090_VERSION" >&2
+    [[ "$DRY_RUN" == true ]] && log::warn "$(t cli_dry_warning)"
+    return 0
+}
+
+#===============================================================================
+# MAIN
+#===============================================================================
+
+main() {
+    declare HELP_WANTED=false
+
+    parse_global "$@"
+    i18n::init "$CONFIG_FILE" "$CLI_LANG"
+    load_modules
+
+    if [[ "$HELP_WANTED" == true ]]; then
+        t main_usage "$EASY1090_VERSION"
+        exit 0
+    fi
+
+    if [[ -z "$COMMAND" ]]; then
+        log::error "$(t cmd_missing)"
+        t main_usage "$EASY1090_VERSION"
+        exit 1
+    fi
+
+    # status and open are read-only and print their own headers, so they skip
+    # the banner and never touch sudo.
+    case "$COMMAND" in
+    status) cmd::status "${COMMAND_ARGS[@]+"${COMMAND_ARGS[@]}"}" ;;
+    open) cmd::open "${COMMAND_ARGS[@]+"${COMMAND_ARGS[@]}"}" ;;
+    install)
+        banner
+        cmd::install "${COMMAND_ARGS[@]+"${COMMAND_ARGS[@]}"}"
+        ;;
+    uninstall)
+        printf "\n${BOLD}easy1090${RESET} %s - %s\n" "$EASY1090_VERSION" "$(t un_title)" >&2
+        [[ "$DRY_RUN" == true ]] && log::warn "$(t cli_dry_warning)"
+        cmd::uninstall "${COMMAND_ARGS[@]+"${COMMAND_ARGS[@]}"}"
+        ;;
+    start | stop | restart)
+        banner
+        "cmd::${COMMAND}" "${COMMAND_ARGS[@]+"${COMMAND_ARGS[@]}"}"
+        ;;
+    *)
+        log::error "$(t cmd_unknown "$COMMAND")"
+        t main_usage "$EASY1090_VERSION"
+        exit 1
+        ;;
+    esac
+}
+
+main "$@"

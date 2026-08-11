@@ -298,3 +298,26 @@ OPÇÕES
 
 Não remove lighttpd nem jq, que são pacotes de uso geral.
 "
+
+#-------------------------------------------------------------------------------
+# Entrypoint, services and open
+#-------------------------------------------------------------------------------
+MSG[main_usage]="easy1090 %s - stack ADS-B em um comando (Arch e derivados)\n\nUSO\n    easy1090 <comando> [opções]\n\nCOMANDOS\n    install       instala o stack (idempotente: rodar de novo é o update)\n    uninstall     desfaz a instalação (best-effort)\n    status        o que está rodando, o que caiu, o que falta\n    start         sobe readsb, lighttpd e tar1090\n    stop          derruba os três\n    restart       reinicia os três, na ordem certa\n    open [alvo]   abre um componente (sem alvo, lista as opções)\n\nOPÇÕES GLOBAIS\n    --lang <pt|en>   idioma da interface\n    --dry-run        imprime os comandos exatos, sem executar\n    --yes            não pergunta nada (exceto a senha do sudo)\n    --verbose        log em nível debug\n    --version        mostra a versão\n    -h, --help       esta ajuda\n\nUse \"easy1090 <comando> --help\" para as opções de cada comando.\n\nstatus e open não precisam de sudo.\n"
+MSG[cmd_unknown]="Comando desconhecido: %s"
+MSG[cmd_missing]="Informe um comando. Use --help para ver a lista."
+MSG[svc_step]="Serviços"
+MSG[svc_acting]="%s: %s"
+MSG[svc_not_installed]="%s não está instalado; pulando."
+MSG[svc_done]="Pronto."
+MSG[open_step]="Abrir"
+MSG[open_targets]="Alvos disponíveis:"
+MSG[open_t_viewadsb]="  viewadsb    tabela ao vivo no terminal (ncurses)"
+MSG[open_t_sbs]="  sbs         stream de mensagens decodificadas (CSV)"
+MSG[open_t_map]="  map         mapa web no navegador"
+MSG[open_t_sdrpp]="  sdrpp       SDR++ (interface gráfica)"
+MSG[open_t_satdump]="  satdump     SatDump (interface gráfica)"
+MSG[open_unknown]="Alvo desconhecido: %s"
+MSG[open_missing]="Comando não encontrado: %s. O componente está instalado?"
+MSG[open_no_display]="Sem sessão gráfica (\$DISPLAY/\$WAYLAND_DISPLAY vazios); não dá para abrir %s aqui."
+MSG[open_url]="Mapa web: %s"
+MSG[open_running]="Rodando: %s"

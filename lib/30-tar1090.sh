@@ -25,6 +25,13 @@ readonly LIGHTTPD_CONF_AVAILABLE="/etc/lighttpd/conf-available"
 readonly LIGHTTPD_CONF_ENABLED="/etc/lighttpd/conf-enabled"
 readonly TAR1090_URL_PATH="/tar1090/"
 
+# Shared with the uninstall command, so they live at module level.
+readonly TAR1090_PATH="/usr/local/share/tar1090"
+readonly TAR1090_UNINSTALL="${TAR1090_PATH}/uninstall.sh"
+readonly TAR1090_DEFAULTS="/etc/default/tar1090"
+readonly MOD_REDIRECT_AVAILABLE="${LIGHTTPD_CONF_AVAILABLE}/06-mod_redirect.conf"
+readonly MOD_REDIRECT_ENABLED="${LIGHTTPD_CONF_ENABLED}/06-mod_redirect.conf"
+
 tar1090::run() {
     log::step "$(t tar_step)"
 
@@ -121,8 +128,8 @@ tar1090::fix_lighttpd_include() {
 # already on in the base config; on Arch it is not, so lighttpd parses the
 # directive, warns "unknown config-key: url.redirect (ignored)" and moves on.
 tar1090::fix_mod_redirect() {
-    local available="${LIGHTTPD_CONF_AVAILABLE}/06-mod_redirect.conf"
-    local enabled="${LIGHTTPD_CONF_ENABLED}/06-mod_redirect.conf"
+    local available="$MOD_REDIRECT_AVAILABLE"
+    local enabled="$MOD_REDIRECT_ENABLED"
 
     [[ -d "$LIGHTTPD_CONF_AVAILABLE" ]] || return 0
 

@@ -20,8 +20,10 @@ What you end up with: the correct driver for the RTL-SDR Blog V4, `readsb` decod
 ```bash
 git clone https://github.com/Esl1h/easy1090.git
 cd easy1090
-./install.sh
+./easy1090 install
 ```
+
+`./install.sh` still works as a shortcut for `./easy1090 install`.
 
 Before running anything as root on your machine, see what it would do:
 
@@ -51,16 +53,20 @@ On first run it asks for your interface language (Portuguese or English), your a
 ### After installing
 
 ```bash
-./status.sh          # what is running, what fell over, what is missing
-viewadsb             # live table in the terminal
-nc localhost 30003   # decoded messages in CSV
+./easy1090 status        # what is running, what fell over, what is missing
+./easy1090 restart       # restart readsb, lighttpd and tar1090 in order
+./easy1090 open          # list what you can open
+./easy1090 open viewadsb # live table in the terminal
+./easy1090 open map      # web map in the browser (prints the URL if headless)
 ```
+
+`status` and `open` never ask for sudo. `open` runs in the current terminal instead of spawning a window, because this stack usually lives on a headless box.
 
 To undo it all:
 
 ```bash
-./uninstall.sh --dry-run   # see exactly what would be removed
-./uninstall.sh
+./easy1090 uninstall --dry-run   # see exactly what would be removed
+./easy1090 uninstall
 ```
 
 It calls tar1090's own uninstaller, removes the services, configs and packages easy1090 installed, and deliberately leaves shared packages (`lighttpd`, `jq`) and the system users alone. `--keep-packages` removes only services and configs.
@@ -117,15 +123,19 @@ It is not a daemon nor a configuration panel. It is an installer you run when yo
 
 ```
 easy1090/
-├── install.sh              entrypoint, orchestrates the modules
-├── status.sh               per component status (read-only)
-├── uninstall.sh            best effort reversal of the install
+├── easy1090                single entrypoint, dispatches the subcommands
+├── install.sh              thin wrapper for "easy1090 install"
 ├── install.conf.example    reference configuration
 ├── lib/
 │   ├── common.sh           logging, dry-run execution, sudo, config
 │   ├── i18n.sh             language selection and lookup
 │   ├── i18n/{pt,en}.sh     message catalogs
 │   ├── pkg-arch.sh         package manager layer
+│   ├── cmd-install.sh      install command
+│   ├── cmd-uninstall.sh    uninstall command
+│   ├── cmd-status.sh       status command (read-only)
+│   ├── cmd-service.sh      start / stop / restart
+│   ├── cmd-open.sh         open command
 │   ├── 00-preflight.sh     read-only checks
 │   ├── 10-driver.sh        RTL-SDR Blog fork and DVB blacklist
 │   ├── 20-readsb.sh        decoder, udev, systemd
