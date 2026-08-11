@@ -211,8 +211,8 @@ cfg::load() {
     local example_file="$2"
 
     if [[ ! -f "$config_file" ]]; then
-        log::warn "Config não encontrada em $config_file"
         if [[ "$DRY_RUN" == true ]]; then
+            log::info "Config ainda não existe; seria criada a partir do exemplo."
             log::dry_run "cp $example_file $config_file"
             # Nothing is written in dry-run, so read the example instead. Without
             # this the run reports defaults that differ from what a real install
@@ -220,10 +220,11 @@ cfg::load() {
             # shellcheck source=/dev/null
             source "$example_file"
         else
-            util::confirm "Criar a partir de $(basename "$example_file")?" ||
-                util::die "Sem config não dá pra seguir. Copie o exemplo e edite."
+            # Creating it from the example is harmless and is what every first
+            # run needs, so it is not worth a prompt the user can trip over.
+            [[ -f "$example_file" ]] || util::die "Exemplo de config não encontrado: $example_file"
             cp "$example_file" "$config_file"
-            log::success "Criada $config_file"
+            log::info "Config criada em $config_file (a partir do exemplo)."
         fi
     fi
 
