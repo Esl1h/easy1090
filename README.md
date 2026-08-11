@@ -143,7 +143,9 @@ easy1090/
 │   ├── 40-optional.sh      SDR++ and SatDump
 │   └── 60-validate.sh      end to end validation
 └── vendor/
-    └── tar1090-install.sh  official installer, pinned by checksum
+    ├── tar1090-install.sh  official installer, pinned by checksum (GPL v2+)
+    ├── LICENSE.tar1090     upstream license text
+    └── README.md           provenance and update procedure
 ```
 
 ## Behind the decisions
@@ -162,4 +164,6 @@ Under development. Tested on EndeavourOS and Omarchy with an RTL-SDR Blog V4. Se
 
 ## License
 
-MIT
+easy1090 is MIT.
+
+`vendor/tar1090-install.sh` is third party code by Matthias Wirth (wiedehopf), redistributed under **GPL v2 or later**, its own license. It stays byte identical to upstream and is invoked as a separate program. See [vendor/README.md](vendor/README.md) for provenance, the checksum pin and how to update it.
