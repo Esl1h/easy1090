@@ -9,7 +9,15 @@
 #===============================================================================
 
 #-------------------------------------------------------------------------------
-# Receptor
+# Interface / Interface
+#-------------------------------------------------------------------------------
+
+# Idioma das mensagens: "pt" ou "en". Vazio pergunta na primeira execução.
+# Interface language: "pt" or "en". Empty asks on first run.
+UI_LANGUAGE=""
+
+#-------------------------------------------------------------------------------
+# Receptor / Receiver
 #-------------------------------------------------------------------------------
 
 # Posição da antena, em graus decimais. Usada para calcular alcance e distância
@@ -67,8 +75,10 @@ NET_BO_PORT="30005"        # Beast out (é daqui que o viewadsb lê)
 
 # Habilitar qualquer um destes compartilha os seus dados e a posição do seu
 # receptor com um terceiro. É opt-in por decisão, não por esquecimento.
+# O instalador pergunta na primeira execução; FEEDER_ASKED evita repetir.
 FEEDER_ADSBEXCHANGE="false"
 FEEDER_FLIGHTAWARE="false"
+FEEDER_ASKED="false"
 
 #-------------------------------------------------------------------------------
 # Pins

@@ -104,7 +104,7 @@ util::have_cmd() {
 }
 
 util::require_command() {
-    util::have_cmd "$1" || util::die "Comando obrigatório não encontrado: $1"
+    util::have_cmd "$1" || util::die "$(t cmd_required "$1")"
 }
 
 # Asks for confirmation. Always true under --yes or --dry-run.
@@ -114,8 +114,8 @@ util::confirm() {
     [[ "$ASSUME_YES" == true || "$DRY_RUN" == true ]] && return 0
 
     local answer
-    read -r -p "$(printf "${BOLD}%s${RESET} [s/N] " "$prompt")" answer
-    [[ "$answer" =~ ^[SsYy]$ ]]
+    read -r -p "$(printf "${BOLD}%s${RESET} %s" "$prompt" "$(t yes_no)")" answer
+    [[ "$answer" =~ ^["$(t yes_chars)"]$ ]]
 }
 
 #===============================================================================
@@ -180,8 +180,8 @@ run::sudo_write() {
 sudo::init() {
     [[ "$DRY_RUN" == true ]] && return 0
 
-    log::info "Validando sudo (a senha pode ser pedida agora)."
-    sudo -v || util::die "Não foi possível validar o sudo."
+    log::info "$(t sudo_validating)"
+    sudo -v || util::die "$(t sudo_failed)"
 
     (
         while true; do
@@ -212,7 +212,7 @@ cfg::load() {
 
     if [[ ! -f "$config_file" ]]; then
         if [[ "$DRY_RUN" == true ]]; then
-            log::info "Config ainda não existe; seria criada a partir do exemplo."
+            log::info "$(t cfg_missing_dry)"
             log::dry_run "cp $example_file $config_file"
             # Nothing is written in dry-run, so read the example instead. Without
             # this the run reports defaults that differ from what a real install
@@ -222,9 +222,9 @@ cfg::load() {
         else
             # Creating it from the example is harmless and is what every first
             # run needs, so it is not worth a prompt the user can trip over.
-            [[ -f "$example_file" ]] || util::die "Exemplo de config não encontrado: $example_file"
+            [[ -f "$example_file" ]] || util::die "$(t cfg_example_missing "$example_file")"
             cp "$example_file" "$config_file"
-            log::info "Config criada em $config_file (a partir do exemplo)."
+            log::info "$(t cfg_created "$config_file")"
         fi
     fi
 
@@ -232,6 +232,12 @@ cfg::load() {
     [[ -f "$config_file" ]] && source "$config_file"
 
     cfg::_apply_defaults
+
+    # Persist the language so the next run does not ask again.
+    if [[ -f "$config_file" && "$DRY_RUN" != true ]]; then
+        grep -qE '^UI_LANGUAGE=' "$config_file" ||
+            cfg::_persist "$config_file" UI_LANGUAGE "$UI_LANGUAGE"
+    fi
 }
 
 cfg::_apply_defaults() {
@@ -252,6 +258,7 @@ cfg::_apply_defaults() {
 
     FEEDER_ADSBEXCHANGE="${FEEDER_ADSBEXCHANGE:-false}"
     FEEDER_FLIGHTAWARE="${FEEDER_FLIGHTAWARE:-false}"
+    FEEDER_ASKED="${FEEDER_ASKED:-false}"
 
     TAR1090_INSTALLER_SHA256="${TAR1090_INSTALLER_SHA256:-}"
     PREFERRED_TERMINAL="${PREFERRED_TERMINAL:-}"
@@ -267,24 +274,77 @@ cfg::require_position() {
     fi
 
     if [[ "$DRY_RUN" == true ]]; then
-        log::warn "RECEIVER_LAT/RECEIVER_LON vazios; usaria valores informados na execução real."
+        log::warn "$(t pos_dry)"
         RECEIVER_LAT="${RECEIVER_LAT:-0.0}"
         RECEIVER_LON="${RECEIVER_LON:-0.0}"
         return 0
     fi
 
     [[ "$ASSUME_YES" == true ]] &&
-        util::die "RECEIVER_LAT/RECEIVER_LON são obrigatórios com --yes. Preencha $config_file."
+        util::die "$(t pos_required_yes "$config_file")"
 
-    log::info "A posição da antena é usada para calcular alcance e distância das aeronaves."
-    read -r -p "Latitude (ex: -23.58): " RECEIVER_LAT
-    read -r -p "Longitude (ex: -46.55): " RECEIVER_LON
+    log::info "$(t pos_intro)"
 
-    [[ -n "$RECEIVER_LAT" && -n "$RECEIVER_LON" ]] || util::die "Latitude e longitude são obrigatórias."
+    # Nobody knows their coordinates by heart, so point at the tools instead of
+    # leaving a bare prompt on screen.
+    printf '\n%s\n%s\n%s\n%s\n\n%s\n\n' \
+        "$(t pos_help_title)" \
+        "$(t pos_help_osm)" \
+        "$(t pos_help_gmaps)" \
+        "$(t pos_help_latlong)" \
+        "$(t pos_help_tip)" >&2
+
+    read -r -p "$(t pos_lat)" RECEIVER_LAT
+    read -r -p "$(t pos_lon)" RECEIVER_LON
+
+    [[ -n "$RECEIVER_LAT" && -n "$RECEIVER_LON" ]] || util::die "$(t pos_required)"
 
     cfg::_persist "$config_file" RECEIVER_LAT "$RECEIVER_LAT"
     cfg::_persist "$config_file" RECEIVER_LON "$RECEIVER_LON"
-    log::success "Posição gravada em $config_file"
+    log::success "$(t pos_saved "$config_file")"
+}
+
+# Feeding a public network is opt-in and asked explicitly, because it publishes
+# both the aircraft you receive and where you are.
+cfg::require_feeder() {
+    local config_file="$1"
+    local answer
+
+    # Already decided (config edited by hand or previous run), or no one to ask.
+    if [[ "$FEEDER_ADSBEXCHANGE" == true || "$FEEDER_FLIGHTAWARE" == true ]]; then
+        return 0
+    fi
+    if [[ "$DRY_RUN" == true || "$ASSUME_YES" == true ]]; then
+        return 0
+    fi
+    [[ -f "$config_file" ]] && grep -qE '^FEEDER_ASKED="true"' "$config_file" && return 0
+
+    printf '\n%s\n%s\n\n%s\n%s\n%s\n\n' \
+        "$(t feed_title)" \
+        "$(t feed_explain)" \
+        "$(t feed_opt_none)" \
+        "$(t feed_opt_adsbx)" \
+        "$(t feed_opt_fa)" >&2
+
+    read -r -p "$(t feed_prompt)" answer
+
+    case "$answer" in
+    2)
+        FEEDER_ADSBEXCHANGE=true
+        cfg::_persist "$config_file" FEEDER_ADSBEXCHANGE "true"
+        log::warn "$(t feed_enabled "ADSBExchange")"
+        ;;
+    3)
+        FEEDER_FLIGHTAWARE=true
+        cfg::_persist "$config_file" FEEDER_FLIGHTAWARE "true"
+        log::warn "$(t feed_enabled "FlightAware")"
+        ;;
+    *)
+        log::info "$(t feed_none)"
+        ;;
+    esac
+
+    cfg::_persist "$config_file" FEEDER_ASKED "true"
 }
 
 cfg::_persist() {
