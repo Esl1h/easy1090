@@ -30,6 +30,7 @@ readonly FEED_STATS_CLONE="${HOME}/.cache/easy1090/adsbexchange-stats"
 readonly FEED_STATS_UNIT="adsbexchange-stats"
 readonly FEED_STATS_USER="adsbexchange"
 readonly FEED_STATS_PATH="/usr/local/share/adsbexchange-stats"
+readonly FEED_STATS_DEFAULTS="/etc/default/adsbexchange-stats"
 # create-uuid.sh writes to one of these, depending on how the host was set up.
 readonly FEED_UUID_FILES=(
     /boot/adsbx-uuid
@@ -183,16 +184,54 @@ feed::stats_run() {
     log::info "$(t feed_stats_running)"
     if [[ "$DRY_RUN" == true ]]; then
         log::dry_run "cd $FEED_STATS_CLONE && sudo bash install.sh"
+    else
+        (cd "$FEED_STATS_CLONE" && sudo bash install.sh) || {
+            log::error "$(t feed_stats_failed)"
+            return 1
+        }
+
+        systemctl is-active --quiet "$FEED_STATS_UNIT" &&
+            log::success "$(t feed_stats_ok)"
+    fi
+
+    # Runs in dry-run too, so the preview shows every step the real run takes.
+    feed::stats_datasource
+    return 0
+}
+
+# Their json-status only looks at /run/adsbexchange-feed, which is created by
+# the ADSBExchange feed package. We feed straight from readsb, so our JSON is
+# in /run/readsb and the service loops on "No valid data source directory".
+#
+# The escape hatch is theirs: USE_OLD_PATH=1 makes it try /run/readsb first.
+# Their installer only writes it when it detects a Raspberry Pi image, which
+# is why it never lands on a normal machine.
+feed::stats_datasource() {
+    local content="# easy1090: look at /run/readsb, where our readsb writes its JSON.
+# Without this, json-status only checks /run/adsbexchange-feed and reports
+# \"No valid data source directory found\" forever.
+USE_OLD_PATH=1"
+
+    if [[ -f "$FEED_STATS_DEFAULTS" ]] && grep -q "^USE_OLD_PATH=1" "$FEED_STATS_DEFAULTS"; then
+        log::skip "$(t feed_datasource_ok)"
         return 0
     fi
 
-    (cd "$FEED_STATS_CLONE" && sudo bash install.sh) || {
-        log::error "$(t feed_stats_failed)"
-        return 1
-    }
+    log::info "$(t feed_datasource_fix)"
+    run::sudo_write "$FEED_STATS_DEFAULTS" "$content"
 
-    systemctl is-active --quiet "$FEED_STATS_UNIT" &&
-        log::success "$(t feed_stats_ok)"
+    log::info "$(t feed_datasource_restart)"
+    run::sudo systemctl restart "$FEED_STATS_UNIT"
+
+    [[ "$DRY_RUN" == true ]] && return 0
+
+    run::cmd sleep 5
+    if journalctl -u "$FEED_STATS_UNIT" --since "-1min" --no-pager 2>/dev/null |
+        grep -q "Using JSON directory"; then
+        log::success "$(t feed_datasource_working)"
+    else
+        log::warn "$(t feed_datasource_wait)"
+    fi
     return 0
 }
 

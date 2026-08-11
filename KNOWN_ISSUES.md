@@ -36,6 +36,18 @@ The message you see on the ADSBExchange site ("You do not have the stats package
 
 Two lesser Debianisms in the same script are harmless: `ischroot` is missing on Arch but only used as an `if` condition, and `vcgencmd` is Raspberry Pi only, likewise guarded.
 
+### The stats service finds no data source when readsb feeds directly
+
+Installing the stats package is not enough. Their `json-status` looks only at `/run/adsbexchange-feed`, the directory created by the ADSBExchange *feed* package. easy1090 feeds straight from readsb with a `--net-connector`, so the JSON lives in `/run/readsb` and the service loops every 20 seconds with:
+
+```
+No valid data source directory found, do you have the adsbexchange feed scripts installed?  Tried each of: [/run/adsbexchange-feed]
+```
+
+The escape hatch is theirs: `USE_OLD_PATH=1` in `/etc/default/adsbexchange-stats` makes it try `/run/readsb` first. Their installer only writes that file when it detects a Raspberry Pi image (`/boot/adsb-config.txt`), which is why it never lands on an ordinary machine. `easy1090 feed` writes it and restarts the service.
+
+The failure is quiet in the way that matters: the service is `active`, `enabled` and green in `systemctl`, and reports nothing at all.
+
 ### No real end to end CI
 
 The full path cannot be tested without an RTL-SDR attached. What can be automated is the static part: `shellcheck`, syntax checks, catalog consistency, the vendored checksum, and the preflight refusing a non-Arch distro. End to end validation stays manual, on a VM or physical machine, after every relevant change in the AUR or in GCC.
