@@ -170,7 +170,7 @@ run::sudo_write() {
     # The comparison runs in dry-run too, otherwise the preview would claim a
     # change (and a service restart) on every run.
     if [[ -f "$path" ]] && [[ "$(cat "$path" 2>/dev/null)" == "$content" ]]; then
-        log::debug "sem alteração: $path"
+        log::debug "unchanged: $path"
         return 0
     fi
 
@@ -183,8 +183,7 @@ run::sudo_write() {
         return 0
     fi
 
-    log::debug "escrevendo $path"
-    FILE_CHANGED=true
+    log::debug "writing $path"
     printf '%s\n' "$content" | sudo tee "$path" >/dev/null
 }
 
@@ -255,7 +254,7 @@ sudo::init() {
         done
     ) &
     SUDO_KEEPALIVE_PID=$!
-    log::debug "keepalive de sudo no pid $SUDO_KEEPALIVE_PID"
+    log::debug "sudo keepalive at pid $SUDO_KEEPALIVE_PID"
 }
 
 sudo::cleanup() {
@@ -331,7 +330,6 @@ cfg::_apply_defaults() {
     FEEDER_ASKED="${FEEDER_ASKED:-false}"
 
     TAR1090_INSTALLER_SHA256="${TAR1090_INSTALLER_SHA256:-}"
-    PREFERRED_TERMINAL="${PREFERRED_TERMINAL:-}"
 }
 
 # Receiver position is the only thing we cannot guess. Prompts when missing.
@@ -339,7 +337,7 @@ cfg::require_position() {
     local config_file="$1"
 
     if [[ -n "${RECEIVER_LAT:-}" && -n "${RECEIVER_LON:-}" ]]; then
-        log::debug "posição: $RECEIVER_LAT, $RECEIVER_LON"
+        log::debug "position: $RECEIVER_LAT, $RECEIVER_LON"
         return 0
     fi
 

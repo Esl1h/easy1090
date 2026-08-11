@@ -1,85 +1,112 @@
 #===============================================================================
-# easy1090 - configuração
+# easy1090 - configuration / configuração
 #
-# Shell sourceável, no estilo /etc/default/*. Copie para install.conf (o
-# install.sh faz isso na primeira execução) e ajuste.
+# EN  Plain sourceable shell, in the /etc/default/* style. Copied to
+#     install.conf on the first run, then edited freely.
+#     This file is the declaration of the desired state of the machine: the
+#     installer is idempotent, so running it again converges to what is here.
 #
-# Este arquivo é a declaração do estado desejado da máquina: como o instalador
-# é idempotente, rodar de novo converge para o que está aqui.
+# PT  Shell sourceável, no estilo /etc/default/*. Copiado para install.conf na
+#     primeira execução, depois é seu para editar.
+#     Este arquivo é a declaração do estado desejado da máquina: o instalador é
+#     idempotente, então rodar de novo converge para o que está aqui.
 #===============================================================================
 
 #-------------------------------------------------------------------------------
-# Interface / Interface
+# Interface
 #-------------------------------------------------------------------------------
 
-# Idioma das mensagens: "pt" ou "en". Vazio pergunta na primeira execução.
-# Interface language: "pt" or "en". Empty asks on first run.
+# EN  Message language: "pt" or "en". Empty asks on the first run.
+# PT  Idioma das mensagens: "pt" ou "en". Vazio pergunta na primeira execução.
 UI_LANGUAGE=""
 
 #-------------------------------------------------------------------------------
-# Receptor / Receiver
+# Receiver / Receptor
 #-------------------------------------------------------------------------------
 
-# Posição da antena, em graus decimais. Usada para calcular alcance e distância
-# das aeronaves. Sem isso o instalador pergunta na primeira execução.
+# EN  Antenna position, in decimal degrees. Used to compute range and distance
+#     to aircraft. Without it the installer asks on the first run.
+# PT  Posição da antena, em graus decimais. Usada para calcular alcance e
+#     distância das aeronaves. Sem isso o instalador pergunta na primeira vez.
 RECEIVER_LAT=""
 RECEIVER_LON=""
 
-# Ganho do tuner. "auto" resolve bem na maioria dos casos; um valor fixo (ex:
-# 49.6) pode render mais em ambiente com muita interferência.
+# EN  Tuner gain. "auto" is fine in most cases; a fixed value (49.6, say) can
+#     do better where there is a lot of interference.
+# PT  Ganho do tuner. "auto" resolve na maioria dos casos; um valor fixo (ex:
+#     49.6) pode render mais em ambiente com muita interferência.
 RECEIVER_GAIN="auto"
 
-# Correção de frequência em ppm. A RTL-SDR Blog V4 tem TCXO de 1 ppm, então 0
-# costuma bastar. Dongles com cristal comum podem precisar de ajuste.
+# EN  Frequency correction in ppm. The RTL-SDR Blog V4 has a 1 ppm TCXO, so 0
+#     is usually enough. Dongles with a plain crystal may need adjusting.
+# PT  Correção de frequência em ppm. A RTL-SDR Blog V4 tem TCXO de 1 ppm, então
+#     0 costuma bastar. Dongles com cristal comum podem precisar de ajuste.
 RECEIVER_PPM="0"
 
 #-------------------------------------------------------------------------------
-# Decodificador
+# Decoder / Decodificador
 #-------------------------------------------------------------------------------
 
-# Alcance máximo aceito, em milhas náuticas. Posições além disso são
-# descartadas como ruído.
+# EN  Maximum accepted range, in nautical miles. Positions beyond it are
+#     discarded as noise.
+# PT  Alcance máximo aceito, em milhas náuticas. Posições além disso são
+#     descartadas como ruído.
 DECODER_MAX_RANGE="450"
 
-# Precisão da posição do receptor exposta no JSON e no mapa:
-#   0 = não publica    1 = aproximada    2 = exata
-# Se o mapa for acessível fora da sua rede, considere 1 ou 0.
+# EN  How precisely your receiver position is exposed in the JSON and on the
+#     map:  0 = not published   1 = approximate   2 = exact
+#     If the map is reachable outside your network, consider 1 or 0.
+# PT  Precisão da posição do seu receptor exposta no JSON e no mapa:
+#       0 = não publica   1 = aproximada   2 = exata
+#     Se o mapa for acessível fora da sua rede, considere 1 ou 0.
 JSON_LOCATION_ACCURACY="2"
 
 #-------------------------------------------------------------------------------
-# Componentes
+# Components / Componentes
 #-------------------------------------------------------------------------------
 
-# Mapa web ao vivo. É o que transforma streams de texto em algo utilizável.
+# EN  Live web map. This is what turns text streams into something usable.
+# PT  Mapa web ao vivo. É o que transforma streams de texto em algo utilizável.
 COMPONENT_TAR1090="true"
 
-# Companheiros gráficos, nenhum deles decodifica ADS-B.
-# SDR++ mostra o espectro/waterfall; SatDump é para satélites em 137 MHz.
-# O build do SatDump leva cerca de 45 minutos.
+# EN  Graphical companions; neither decodes ADS-B. SDR++ shows the spectrum and
+#     waterfall, SatDump is for satellites at 137 MHz. The SatDump build takes
+#     around 45 minutes.
+# PT  Companheiros gráficos; nenhum decodifica ADS-B. O SDR++ mostra espectro e
+#     waterfall, o SatDump é para satélites em 137 MHz. O build do SatDump leva
+#     cerca de 45 minutos.
 COMPONENT_SDRPP="false"
 COMPONENT_SATDUMP="false"
 
 #-------------------------------------------------------------------------------
-# Rede (portas do readsb)
+# Network / Rede (readsb ports)
 #-------------------------------------------------------------------------------
 
-NET_RI_PORT="30001"        # Beast in (raw in)
+NET_RI_PORT="30001"        # raw in
 NET_RO_PORT="30002"        # raw out
-NET_SBS_PORT="30003"       # SBS/BaseStation out (CSV, bom para grep e log)
+NET_SBS_PORT="30003"       # SBS/BaseStation out (CSV, good for grep and logs)
 NET_BI_PORT="30004,30104"  # Beast in
-NET_BO_PORT="30005"        # Beast out (é daqui que o viewadsb lê)
+NET_BO_PORT="30005"        # Beast out (this is where viewadsb reads from)
 
 #-------------------------------------------------------------------------------
-# Feeders (desabilitados por padrão)
+# Feeders (off by default / desligados por padrão)
 #-------------------------------------------------------------------------------
 
-# Habilitar compartilha os seus dados e a posição do seu receptor com um
-# terceiro. É opt-in por decisão, não por esquecimento.
-# O instalador pergunta na primeira execução; FEEDER_ASKED evita repetir.
+# EN  Enabling this shares your data and your receiver position with a third
+#     party. It is opt-in by decision, not by oversight. The installer asks on
+#     the first run; FEEDER_ASKED keeps it from asking again.
 #
-# FlightAware não está aqui de propósito: alimentar a rede deles exige o
-# cliente piaware, com registro e ID de feeder próprios. Um --net-connector
-# simples para piaware.flightaware.com não alimenta nada.
+#     FlightAware is deliberately absent: feeding their network requires the
+#     piaware client, with its own registration and feeder ID. A plain
+#     --net-connector to piaware.flightaware.com feeds nothing.
+#
+# PT  Habilitar compartilha os seus dados e a posição do seu receptor com um
+#     terceiro. É opt-in por decisão, não por esquecimento. O instalador
+#     pergunta na primeira execução; FEEDER_ASKED evita repetir.
+#
+#     O FlightAware não está aqui de propósito: alimentar a rede deles exige o
+#     cliente piaware, com registro e ID de feeder próprios. Um --net-connector
+#     simples para piaware.flightaware.com não alimenta nada.
 FEEDER_ADSBEXCHANGE="false"
 FEEDER_ASKED="false"
 
@@ -87,16 +114,12 @@ FEEDER_ASKED="false"
 # Pins
 #-------------------------------------------------------------------------------
 
-# Checksum do instalador do tar1090 vendorizado em vendor/. O script roda como
-# root, então uma alteração inesperada precisa abortar a execução.
-# Para atualizar: baixe a versão nova, confira o diff, rode sha256sum e troque
-# o valor abaixo.
+# EN  Checksum of the tar1090 installer vendored under vendor/. That script
+#     runs as root, so an unexpected change has to abort the run.
+#     To update: download the new version, read the diff, run sha256sum and
+#     replace the value below. See vendor/README.md.
+# PT  Checksum do instalador do tar1090 vendorizado em vendor/. Esse script roda
+#     como root, então uma alteração inesperada precisa abortar a execução.
+#     Para atualizar: baixe a versão nova, leia o diff, rode sha256sum e troque
+#     o valor abaixo. Veja vendor/README.md.
 TAR1090_INSTALLER_SHA256="5f1cbfa1561e709f66c29bb1bf18794eb9b1fcfdcf1b00df9f3d97bc2ab9a95f"
-
-#-------------------------------------------------------------------------------
-# Preferências
-#-------------------------------------------------------------------------------
-
-# Emulador de terminal preferido para o open.sh. Vazio usa $TERMINAL e depois
-# tenta foot, kitty, alacritty, konsole, gnome-terminal e xterm, nessa ordem.
-PREFERRED_TERMINAL=""
