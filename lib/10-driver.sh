@@ -106,6 +106,18 @@ driver::validate() {
         return 1
     fi
 
+    # On a re-run readsb already owns the device, so rtl_test enumerates it but
+    # cannot claim the interface. That is a healthy system, not a failure: the
+    # device line still tells us which model it is.
+    if grep -qE "usb_claim_interface error|Failed to open rtlsdr device" <<<"$output"; then
+        if grep -q "Blog V4" <<<"$output"; then
+            log::skip "$(t drv_busy_v4)"
+        else
+            log::skip "$(t drv_busy)"
+        fi
+        return 0
+    fi
+
     if grep -q "R828D" <<<"$output"; then
         log::success "$(t drv_tuner_v4)"
     elif grep -q "R820T" <<<"$output"; then
