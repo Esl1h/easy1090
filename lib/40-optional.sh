@@ -24,14 +24,14 @@ optional::run() {
 #===============================================================================
 
 sdrpp::run() {
-    log::step "SDR++ (visualizador de espectro)"
+    log::step "$(t opt_sdrpp_step)"
 
     if pkg::is_installed "$SDRPP_PACKAGE"; then
-        log::skip "$SDRPP_PACKAGE já instalado."
+        log::skip "$(t drv_installed "$SDRPP_PACKAGE")"
         return 0
     fi
 
-    log::info "SDR++ não decodifica ADS-B; serve para conferir visualmente a energia RF em 1090 MHz."
+    log::info "$(t opt_sdrpp_note)"
     pkg::install_aur "$SDRPP_PACKAGE"
 }
 
@@ -40,19 +40,19 @@ sdrpp::run() {
 #===============================================================================
 
 satdump::run() {
-    log::step "SatDump (decodificador de satélites)"
+    log::step "$(t opt_satdump_step)"
 
     if pkg::is_installed "$SATDUMP_PACKAGE"; then
-        log::skip "$SATDUMP_PACKAGE já instalado."
+        log::skip "$(t drv_installed "$SATDUMP_PACKAGE")"
         return 0
     fi
 
     # Stable release on purpose, not the -git: it is a large C++/CMake project
     # with many plugins, and the tagged version is far less likely to break
     # against whatever GCC the system is on.
-    log::warn "O build do SatDump é longo (cerca de 45 minutos no hardware de referência)."
-    util::confirm "Continuar com a instalação do SatDump?" || {
-        log::info "SatDump pulado."
+    log::warn "$(t opt_satdump_slow)"
+    util::confirm "$(t opt_satdump_confirm)" || {
+        log::info "$(t opt_satdump_skipped)"
         return 0
     }
 

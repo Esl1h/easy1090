@@ -9,7 +9,7 @@
 #===============================================================================
 
 validate::run() {
-    log::step "Validação final"
+    log::step "$(t val_step)"
 
     if [[ "$DRY_RUN" == true ]]; then
         log::dry_run "systemctl is-active readsb lighttpd tar1090"
@@ -37,7 +37,7 @@ validate::service() {
     local unit="$1"
 
     if ! systemctl list-unit-files "${unit}.service" &>/dev/null; then
-        log::error "Unidade não encontrada: ${unit}.service"
+        log::error "$(t val_unit_missing "$unit")"
         return 1
     fi
 
@@ -46,11 +46,11 @@ validate::service() {
     enabled="$(systemctl is-enabled "$unit" 2>/dev/null || true)"
 
     if [[ "$active" == "active" && "$enabled" == "enabled" ]]; then
-        log::success "${unit}: ativo e habilitado no boot."
+        log::success "$(t val_service_ok "$unit")"
         return 0
     fi
 
-    log::error "${unit}: active=${active:-?} enabled=${enabled:-?}"
+    log::error "$(t val_service_bad "$unit" "${active:-?}" "${enabled:-?}")"
     return 1
 }
 
@@ -58,7 +58,7 @@ validate::service() {
 # being refreshed, so we check the file's own clock instead of aircraft count.
 validate::decoding() {
     [[ -f "$READSB_JSON" ]] || {
-        log::error "$READSB_JSON não existe. O readsb está gravando JSON?"
+        log::error "$(t val_json_missing "$READSB_JSON")"
         return 1
     }
 
@@ -68,14 +68,13 @@ validate::decoding() {
     age="$(awk -v n="$now" 'BEGIN { printf "%d", systime() - n }')"
 
     if [[ "$age" -gt 60 ]]; then
-        log::error "aircraft.json parado há ${age}s; o readsb pode ter travado."
+        log::error "$(t val_json_stale "$age")"
         return 1
     fi
 
-    log::success "readsb decodificando (JSON atualizado há ${age}s, ${aircraft} aeronave(s) na tela)."
+    log::success "$(t val_decoding_ok "$age" "$aircraft")"
 
-    [[ "$aircraft" -eq 0 ]] &&
-        log::info "Zero aeronaves agora é normal: depende de tráfego, antena e linha de visada."
+    [[ "$aircraft" -eq 0 ]] && log::info "$(t val_zero_aircraft)"
 
     return 0
 }
@@ -85,16 +84,16 @@ validate::web() {
     code="$(curl -s -o /dev/null -w '%{http_code}' "http://localhost/tar1090/" || true)"
 
     if [[ "$code" != "200" ]]; then
-        log::error "http://localhost/tar1090/ devolveu ${code:-sem resposta}."
+        log::error "$(t val_web_bad "${code:-?}")"
         return 1
     fi
 
     if curl -sf "http://localhost/tar1090/data/aircraft.json" -o /dev/null; then
-        log::success "tar1090 servindo mapa e dados."
+        log::success "$(t val_web_ok)"
         return 0
     fi
 
-    log::error "O mapa responde, mas /tar1090/data/aircraft.json não. Cheque o serviço tar1090."
+    log::error "$(t val_web_data_bad)"
     return 1
 }
 
@@ -106,16 +105,16 @@ validate::summary() {
 
     printf "\n"
     if [[ "$failures" -eq 0 ]]; then
-        log::success "Tudo no ar."
+        log::success "$(t val_all_ok)"
     else
-        log::error "${failures} verificação(ões) falharam."
+        log::error "$(t val_failures "$failures")"
     fi
 
-    printf "\n${BOLD}Como acompanhar o tráfego:${RESET}\n" >&2
-    printf "  viewadsb                         tabela ao vivo no terminal\n" >&2
-    printf "  nc localhost %-5s               mensagens decodificadas (SBS/CSV)\n" "$NET_SBS_PORT" >&2
-    printf "  jq . %s\n" "$READSB_JSON" >&2
+    printf "\n${BOLD}%s${RESET}\n" "$(t val_howto)" >&2
+    printf "  %-32s %s\n" "viewadsb" "$(t val_howto_viewadsb)" >&2
+    printf "  %-32s %s\n" "nc localhost $NET_SBS_PORT" "$(t val_howto_nc)" >&2
+    printf "  %-32s\n" "jq . $READSB_JSON" >&2
     [[ "$COMPONENT_TAR1090" == true ]] &&
-        printf "  http://%s/tar1090/          mapa web ao vivo\n" "${ip:-localhost}" >&2
+        printf "  %-32s %s\n" "http://${ip:-localhost}/tar1090/" "$(t val_howto_map)" >&2
     printf "\n" >&2
 }

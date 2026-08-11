@@ -19,7 +19,7 @@ readonly DVB_MODULE="dvb_usb_rtl28xxu"
 readonly DVB_BLACKLIST="/etc/modprobe.d/blacklist-rtlsdr.conf"
 
 driver::run() {
-    log::step "Driver RTL-SDR"
+    log::step "$(t drv_step)"
 
     driver::install_fork
     driver::blacklist_dvb
@@ -32,7 +32,7 @@ driver::is_done() {
 
 driver::install_fork() {
     if driver::is_done; then
-        log::skip "$DRIVER_PACKAGE já instalado."
+        log::skip "$(t drv_installed "$DRIVER_PACKAGE")"
         return 0
     fi
 
@@ -40,9 +40,9 @@ driver::install_fork() {
     # --noconfirm pacman answers "N" to the replace prompt and the install
     # aborts, so the removal has to be its own explicit step.
     if pkg::is_installed "$DRIVER_CONFLICTS"; then
-        log::warn "O pacote genérico $DRIVER_CONFLICTS conflita com o fork da RTL-SDR Blog."
-        util::confirm "Remover $DRIVER_CONFLICTS agora?" ||
-            util::die "Sem remover o conflito, a instalação do fork falha."
+        log::warn "$(t drv_conflict "$DRIVER_CONFLICTS")"
+        util::confirm "$(t drv_conflict_confirm "$DRIVER_CONFLICTS")" ||
+            util::die "$(t drv_conflict_abort)"
         pkg::remove "$DRIVER_CONFLICTS"
     fi
 
@@ -56,27 +56,27 @@ driver::blacklist_dvb() {
     local content
     content="$(
         cat <<EOF
-# easy1090: mantém o driver de TV digital longe do dongle RTL-SDR.
-# blacklist impede o autoload no boot; install impede a carga por alias
-# quando o udev pede o módulo no hotplug.
+# easy1090: keeps the digital TV driver away from the RTL-SDR dongle.
+# blacklist stops autoload at boot; install stops the alias-triggered load
+# when udev asks for the module on hotplug.
 blacklist $DVB_MODULE
 install $DVB_MODULE /bin/false
 EOF
     )"
 
     if [[ -f "$DVB_BLACKLIST" ]] && grep -q "install $DVB_MODULE /bin/false" "$DVB_BLACKLIST"; then
-        log::skip "Blacklist do $DVB_MODULE já configurada."
+        log::skip "$(t drv_blacklist_ok "$DVB_MODULE")"
     else
-        log::info "Configurando blacklist de $DVB_MODULE"
+        log::info "$(t drv_blacklist_set "$DVB_MODULE")"
         run::sudo_write "$DVB_BLACKLIST" "$content"
     fi
 
     if lsmod 2>/dev/null | grep -q "^${DVB_MODULE}"; then
-        log::info "Descarregando $DVB_MODULE (carregado agora)."
+        log::info "$(t drv_module_unload "$DVB_MODULE")"
         run::sudo modprobe -r "$DVB_MODULE" ||
-            log::warn "Não consegui descarregar $DVB_MODULE; pode ser necessário reiniciar."
+            log::warn "$(t drv_module_unload_fail "$DVB_MODULE")"
     else
-        log::skip "$DVB_MODULE não está carregado."
+        log::skip "$(t drv_module_absent "$DVB_MODULE")"
     fi
 }
 
@@ -87,11 +87,11 @@ driver::validate() {
     fi
 
     util::have_cmd rtl_test || {
-        log::warn "rtl_test não encontrado no PATH; pulando validação do driver."
+        log::warn "$(t drv_test_missing)"
         return 0
     }
 
-    log::info "Validando o hardware com rtl_test."
+    log::info "$(t drv_test_running)"
 
     # rtl_test -t always ends with "No E4000 tuner found, aborting." on this
     # hardware. That is the E4000 specific gain test, not a failure, so we look
@@ -101,17 +101,17 @@ driver::validate() {
     log::debug "$output"
 
     if grep -q "No supported devices found" <<<"$output"; then
-        log::error "Nenhum dispositivo suportado encontrado."
-        log::error "Cheque o cabo e a porta USB (prefira as traseiras, ligadas direto à placa-mãe)."
+        log::error "$(t drv_no_device)"
+        log::error "$(t drv_no_device_hint)"
         return 1
     fi
 
     if grep -q "R828D" <<<"$output"; then
-        log::success "Tuner R828D detectado (RTL-SDR Blog V4)."
+        log::success "$(t drv_tuner_v4)"
     elif grep -q "R820T" <<<"$output"; then
-        log::success "Tuner R820T/R820T2 detectado (v3 ou clone)."
+        log::success "$(t drv_tuner_v3)"
     else
-        log::warn "Dongle respondeu, mas não identifiquei o tuner. Saída completa em --log-level debug."
+        log::warn "$(t drv_tuner_unknown)"
     fi
 
     return 0

@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
 #===============================================================================
-# easy1090 - instalador do stack ADS-B em um comando
+# easy1090 - one command ADS-B stack installer
 #
-# Deixa rodando, num Arch limpo com uma RTL-SDR conectada:
-#   driver (fork RTL-SDR Blog) -> readsb (fork wiedehopf, JSON) -> tar1090
+# On a clean Arch box with an RTL-SDR plugged in, leaves this running:
+#   driver (RTL-SDR Blog fork) -> readsb (wiedehopf fork, JSON) -> tar1090
 #
-# É idempotente: rodar de novo é a forma de atualizar. Cada módulo detecta o
-# que já está pronto e pula.
+# Idempotent: re-running is how you update. Each module detects what is already
+# in place and skips it.
 #
 # Author: Esli
 # License: MIT
@@ -22,53 +22,29 @@ readonly CONFIG_EXAMPLE="${EASY1090_ROOT}/install.conf.example"
 
 # shellcheck source=lib/common.sh
 source "${EASY1090_ROOT}/lib/common.sh"
-
-#===============================================================================
-# USAGE
-#===============================================================================
-
-usage() {
-    cat <<EOF
-${BOLD}easy1090${RESET} ${EASY1090_VERSION} - instalador do stack ADS-B (Arch e derivados)
-
-USO
-    ./${SCRIPT_NAME} [opções]
-
-OPÇÕES
-    --full              instala tudo, inclusive SDR++ e SatDump
-    --lat <graus>       latitude da antena (ex: -23.58)
-    --lon <graus>       longitude da antena (ex: -46.55)
-    --skip-tar1090      não instala o mapa web
-    --skip-sdrpp        não instala o SDR++
-    --skip-satdump      não instala o SatDump
-    --dry-run           roda o preflight e imprime os comandos exatos, sem executar
-    --yes               não pergunta nada (exceto a senha do sudo)
-    --verbose           log em nível debug
-    --version           mostra a versão
-    -h, --help          esta ajuda
-
-EXEMPLOS
-    ./${SCRIPT_NAME}                                  interativo, pergunta lat/lon
-    ./${SCRIPT_NAME} --lat -23.58 --lon -46.55 --yes  sem interação
-    ./${SCRIPT_NAME} --dry-run                        mostra o que faria
-
-A configuração vive em install.conf (gerada a partir do .example na primeira
-execução). As flags acima sobrescrevem o que estiver lá.
-EOF
-}
+# shellcheck source=lib/i18n.sh
+source "${EASY1090_ROOT}/lib/i18n.sh"
 
 #===============================================================================
 # ARGUMENT PARSING
 #===============================================================================
 
-declare CLI_LAT="" CLI_LON=""
+declare CLI_LAT="" CLI_LON="" CLI_LANG=""
 declare CLI_SKIP_TAR1090=false CLI_FULL=false
 declare CLI_SKIP_SDRPP=false CLI_SKIP_SATDUMP=false
+
+usage() {
+    t cli_usage "$EASY1090_VERSION"
+}
 
 parse_args() {
     while [[ $# -gt 0 ]]; do
         case "$1" in
         --full) CLI_FULL=true ;;
+        --lang)
+            CLI_LANG="${2:-}"
+            shift
+            ;;
         --lat)
             CLI_LAT="${2:-}"
             shift
@@ -88,13 +64,10 @@ parse_args() {
             exit 0
             ;;
         -h | --help)
-            usage
-            exit 0
+            HELP_REQUESTED=true
             ;;
         *)
-            log::error "Opção desconhecida: $1"
-            usage
-            exit 1
+            UNKNOWN_OPT="$1"
             ;;
         esac
         shift
@@ -135,13 +108,28 @@ load_modules() {
 
 banner() {
     printf "\n${BOLD}easy1090${RESET} %s\n" "$EASY1090_VERSION" >&2
-    [[ "$DRY_RUN" == true ]] &&
-        log::warn "Modo --dry-run: nada será alterado; os comandos abaixo são os reais."
+    [[ "$DRY_RUN" == true ]] && log::warn "$(t cli_dry_warning)"
     return 0
 }
 
 main() {
+    declare HELP_REQUESTED=false UNKNOWN_OPT=""
+
     parse_args "$@"
+
+    # Language first: every message below, including errors, goes through it.
+    i18n::init "$CONFIG_FILE" "$CLI_LANG"
+
+    if [[ -n "$UNKNOWN_OPT" ]]; then
+        log::error "$(t cli_unknown_opt "$UNKNOWN_OPT")"
+        usage
+        exit 1
+    fi
+
+    if [[ "$HELP_REQUESTED" == true ]]; then
+        usage
+        exit 0
+    fi
 
     load_modules
     banner
@@ -151,6 +139,7 @@ main() {
     cfg::load "$CONFIG_FILE" "$CONFIG_EXAMPLE"
     apply_overrides
     cfg::require_position "$CONFIG_FILE"
+    cfg::require_feeder "$CONFIG_FILE"
 
     trap 'sudo::cleanup' EXIT
     sudo::init
