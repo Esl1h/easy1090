@@ -40,7 +40,7 @@ MSG[feed_title]="Compartilhar seus dados com uma rede pública de rastreamento d
 MSG[feed_explain]="Isso envia as aeronaves que você recebe, e a posição do seu receptor, para servidores de terceiros. Em troca, esses sites costumam liberar acesso premium a quem contribui."
 MSG[feed_opt_none]="  1) Não compartilhar (padrão, tudo fica só na sua rede)"
 MSG[feed_opt_adsbx]="  2) ADSBExchange (adsbexchange.com, sem filtro de aeronaves)"
-MSG[feed_opt_fa]="  3) FlightAware (flightaware.com)"
+MSG[feed_fa_note]="FlightAware não entra nesta lista: alimentar a rede deles exige o cliente piaware, com registro e ID de feeder próprios; um conector beast simples não funciona."
 MSG[feed_prompt]="Escolha [1]: "
 MSG[feed_none]="Feed local apenas; nada será compartilhado."
 MSG[feed_enabled]="Feed habilitado: %s. Sua posição será compartilhada."
@@ -231,3 +231,24 @@ MSG[sts_json_fresh]="JSON de %ss atrás, %s aeronave(s)"
 MSG[sts_json_stale]="JSON parado há %ss"
 MSG[sts_lighttpd_down]="lighttpd inativo"
 MSG[sts_http]="HTTP %s"
+
+#-------------------------------------------------------------------------------
+# Restart / device busy
+#-------------------------------------------------------------------------------
+MSG[rsb_restarting]="Config mudou; reiniciando o readsb para aplicar."
+MSG[tar_lighttpd_restart]="Config mudou; reiniciando o lighttpd para aplicar."
+MSG[drv_busy]="Dongle em uso pelo readsb (esperado numa reexecução); pulando o rtl_test."
+MSG[drv_busy_v4]="Dongle em uso pelo readsb (RTL-SDR Blog V4); pulando o rtl_test."
+
+#-------------------------------------------------------------------------------
+# Packages
+#-------------------------------------------------------------------------------
+MSG[pkg_installed]="Já instalado: %s"
+MSG[pkg_pacman]="Instalando via pacman: %s"
+MSG[pkg_absent]="Não instalado, nada a remover: %s"
+MSG[pkg_removing]="Removendo pacote conflitante: %s"
+MSG[pkg_aur]="Instalando via AUR: %s"
+MSG[pkg_clean_build]="Limpando build anterior: %s"
+MSG[pkg_cloning]="Clonando PKGBUILD de %s"
+MSG[pkg_building]="Compilando e instalando (%s)"
+MSG[pkg_build_missing]="Diretório de build não encontrado: %s"

@@ -73,11 +73,14 @@ NET_BO_PORT="30005"        # Beast out (é daqui que o viewadsb lê)
 # Feeders (desabilitados por padrão)
 #-------------------------------------------------------------------------------
 
-# Habilitar qualquer um destes compartilha os seus dados e a posição do seu
-# receptor com um terceiro. É opt-in por decisão, não por esquecimento.
+# Habilitar compartilha os seus dados e a posição do seu receptor com um
+# terceiro. É opt-in por decisão, não por esquecimento.
 # O instalador pergunta na primeira execução; FEEDER_ASKED evita repetir.
+#
+# FlightAware não está aqui de propósito: alimentar a rede deles exige o
+# cliente piaware, com registro e ID de feeder próprios. Um --net-connector
+# simples para piaware.flightaware.com não alimenta nada.
 FEEDER_ADSBEXCHANGE="false"
-FEEDER_FLIGHTAWARE="false"
 FEEDER_ASKED="false"
 
 #-------------------------------------------------------------------------------

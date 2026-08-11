@@ -68,7 +68,9 @@ Dois pontos que merecem atenção antes da primeira execução:
 
 `JSON_LOCATION_ACCURACY` controla a precisão da posição do seu receptor exposta no JSON e no mapa. O padrão é exata; se o mapa for acessível fora da sua rede, considere baixar para aproximada ou não publicar.
 
-`FEEDER_ADSBEXCHANGE` e `FEEDER_FLIGHTAWARE` vêm desligados. Habilitar qualquer um compartilha seus dados e sua posição com terceiros, então é opt-in por decisão, não por esquecimento. O instalador pergunta isso explicitamente na primeira execução.
+`FEEDER_ADSBEXCHANGE` vem desligado. Habilitar compartilha seus dados e sua posição com terceiros, então é opt-in por decisão, não por esquecimento. O instalador pergunta isso explicitamente na primeira execução.
+
+O FlightAware não é oferecido de propósito: alimentar a rede deles exige o cliente `piaware`, com registro e ID de feeder próprios, e um `--net-connector` simples não alimenta nada.
 
 ## O que ele resolve por você
 

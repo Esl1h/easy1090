@@ -68,7 +68,9 @@ Two settings worth reading before the first run:
 
 `JSON_LOCATION_ACCURACY` controls how precisely your receiver position is exposed in the JSON and on the map. The default is exact; if the map is reachable outside your network, consider lowering it to approximate, or not publishing it at all.
 
-`FEEDER_ADSBEXCHANGE` and `FEEDER_FLIGHTAWARE` are off. Enabling either shares your data and your position with a third party, so it is opt-in by decision, never by oversight. The installer asks explicitly on first run.
+`FEEDER_ADSBEXCHANGE` is off. Enabling it shares your data and your position with a third party, so it is opt-in by decision, never by oversight. The installer asks explicitly on first run.
+
+FlightAware is deliberately not offered: feeding their network requires the `piaware` client, with its own registration and feeder ID, and a plain `--net-connector` feeds nothing.
 
 ## What it handles for you
 

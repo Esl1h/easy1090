@@ -40,7 +40,7 @@ MSG[feed_title]="Share your data with a public flight tracking network?"
 MSG[feed_explain]="This sends the aircraft you receive, and your receiver position, to third party servers. In return those sites usually grant premium access to contributors."
 MSG[feed_opt_none]="  1) Do not share (default, everything stays on your network)"
 MSG[feed_opt_adsbx]="  2) ADSBExchange (adsbexchange.com, no aircraft filtering)"
-MSG[feed_opt_fa]="  3) FlightAware (flightaware.com)"
+MSG[feed_fa_note]="FlightAware is not listed here: feeding their network requires the piaware client, with its own registration and feeder ID; a plain beast connector does not work."
 MSG[feed_prompt]="Choose [1]: "
 MSG[feed_none]="Local feed only; nothing will be shared."
 MSG[feed_enabled]="Feed enabled: %s. Your position will be shared."
@@ -231,3 +231,24 @@ MSG[sts_json_fresh]="JSON from %ss ago, %s aircraft"
 MSG[sts_json_stale]="JSON stale for %ss"
 MSG[sts_lighttpd_down]="lighttpd inactive"
 MSG[sts_http]="HTTP %s"
+
+#-------------------------------------------------------------------------------
+# Restart / device busy
+#-------------------------------------------------------------------------------
+MSG[rsb_restarting]="Config changed; restarting readsb to apply it."
+MSG[tar_lighttpd_restart]="Config changed; restarting lighttpd to apply it."
+MSG[drv_busy]="Dongle already in use by readsb (expected on a re-run); skipping rtl_test."
+MSG[drv_busy_v4]="Dongle already in use by readsb (RTL-SDR Blog V4); skipping rtl_test."
+
+#-------------------------------------------------------------------------------
+# Packages
+#-------------------------------------------------------------------------------
+MSG[pkg_installed]="Already installed: %s"
+MSG[pkg_pacman]="Installing via pacman: %s"
+MSG[pkg_absent]="Not installed, nothing to remove: %s"
+MSG[pkg_removing]="Removing conflicting package: %s"
+MSG[pkg_aur]="Installing from the AUR: %s"
+MSG[pkg_clean_build]="Cleaning previous build: %s"
+MSG[pkg_cloning]="Cloning PKGBUILD for %s"
+MSG[pkg_building]="Building and installing (%s)"
+MSG[pkg_build_missing]="Build directory not found: %s"
