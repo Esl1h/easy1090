@@ -3,7 +3,10 @@
 # easy1090 - catálogo de mensagens (português)
 #===============================================================================
 
-# shellcheck disable=SC2034
+# MSG é declarado como array associativo em lib/i18n.sh, que carrega este
+# arquivo. Analisando o catálogo isoladamente, o shellcheck não enxerga essa
+# declaração e acha que cada chave é uma variável solta.
+# shellcheck disable=SC2034,SC2154
 
 #-------------------------------------------------------------------------------
 # Comum
