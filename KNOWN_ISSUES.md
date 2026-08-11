@@ -26,6 +26,16 @@ Twice, right at the start. This is noise, not a failure: the upstream line is a 
 
 A symptom of the missing mod_redirect, described in the resolved section. If the message comes back after an update, it means `06-mod_redirect.conf` disappeared or stopped being loaded.
 
+### The ADSBExchange stats installer dies on Arch
+
+Their `stats.sh` is an eleven line bootstrap that `apt-get install`s git and clones `adsbexchange/adsbexchange-stats`. The real installer is in that repository, and on line 10 it calls `adduser` with no fallback. Arch has `useradd`, not `adduser`, and the script runs under `set -e`, so it aborts right there, having created only an empty `/usr/local/share/adsbexchange-stats`. Nothing else runs: no files copied, no service, no UUID.
+
+The message you see on the ADSBExchange site ("You do not have the stats package configured") therefore never goes away, no matter how many times you run their command.
+
+`easy1090 feed` works around it the same way the tar1090 module does, without patching upstream: it creates the `adsbexchange` system user first, so their `id -u` check passes and the adduser branch is skipped, installs the dependencies their script only knows how to fetch with apt or yum (`curl jq gzip perl bind`, where `bind` provides `host`), and then hands over to their `install.sh` unmodified.
+
+Two lesser Debianisms in the same script are harmless: `ischroot` is missing on Arch but only used as an `if` condition, and `vcgencmd` is Raspberry Pi only, likewise guarded.
+
 ### No real end to end CI
 
 The full path cannot be tested without an RTL-SDR attached. What can be automated is the static part: `shellcheck`, syntax checks, catalog consistency, the vendored checksum, and the preflight refusing a non-Arch distro. End to end validation stays manual, on a VM or physical machine, after every relevant change in the AUR or in GCC.

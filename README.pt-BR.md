@@ -111,6 +111,14 @@ Dois pontos que merecem atenção antes da primeira execução:
 
 `JSON_LOCATION_ACCURACY` controla a precisão da posição do seu receptor exposta no JSON e no mapa. O padrão é exata; se o mapa for acessível fora da sua rede, considere baixar para aproximada ou não publicar.
 
+Para ligar e configurar o pacote de estatísticas:
+
+```bash
+./easy1090 feed             # habilita, converge, instala o stats e mostra seu UUID
+./easy1090 feed --status    # somente leitura: você está mesmo conectado?
+./easy1090 feed --disable
+```
+
 `FEEDER_ADSBEXCHANGE` vem desligado. Habilitar compartilha seus dados e sua posição com terceiros, então é opt-in por decisão, não por esquecimento. O instalador pergunta isso explicitamente na primeira execução.
 
 O FlightAware não é oferecido de propósito: alimentar a rede deles exige o cliente `piaware`, com registro e ID de feeder próprios, e um `--net-connector` simples não alimenta nada.
@@ -161,6 +169,7 @@ easy1090/
 │   ├── pkg-arch.sh         camada de gerenciador de pacotes
 │   ├── cmd-install.sh      comando install
 │   ├── cmd-update.sh       comando update
+│   ├── cmd-feed.sh         feed e estatísticas do ADSBExchange
 │   ├── cmd-uninstall.sh    comando uninstall
 │   ├── cmd-status.sh       comando status (somente leitura)
 │   ├── cmd-service.sh      start / stop / restart

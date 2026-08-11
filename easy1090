@@ -126,6 +126,10 @@ main() {
         banner
         cmd::update "${COMMAND_ARGS[@]+"${COMMAND_ARGS[@]}"}"
         ;;
+    feed)
+        banner
+        cmd::feed "${COMMAND_ARGS[@]+"${COMMAND_ARGS[@]}"}"
+        ;;
     *)
         log::error "$(t cmd_unknown "$COMMAND")"
         t main_usage "$EASY1090_VERSION"

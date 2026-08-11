@@ -8,6 +8,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ### Added
 
+- `easy1090 feed`, to enable the ADSBExchange feed and install their statistics package. Their installer aborts on Arch because it calls `adduser`; easy1090 creates the system user and the dependencies first, then runs their script unmodified.
 - `easy1090 update`, for package versions. It runs `yay -Syu --devel` and then compares readsb's installed commit with upstream HEAD, because readsb is built outside yay and no yay flag will ever check it.
 
 ### Fixed

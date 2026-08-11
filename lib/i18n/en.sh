@@ -305,7 +305,7 @@ Does not remove lighttpd or jq, which are general purpose packages.
 #-------------------------------------------------------------------------------
 # Entrypoint, services and open
 #-------------------------------------------------------------------------------
-MSG[main_usage]="easy1090 %s - ADS-B stack in one command (Arch and derivatives)\n\nUSAGE\n    easy1090 <command> [options]\n\nCOMMANDS\n    install       install the stack (idempotent, safe to re-run)\n    update        update package versions (install converges config)\n    uninstall     undo the installation (best effort)\n    status        what is running, what fell over, what is missing\n    start         bring up readsb, lighttpd and tar1090\n    stop          bring all three down\n    restart       restart all three, in the right order\n    open [target] open a component (without a target, lists the options)\n\nGLOBAL OPTIONS\n    --lang <pt|en>   interface language\n    --dry-run        print the exact commands, without executing\n    --yes            do not ask anything (except the sudo password)\n    --verbose        debug level logging\n    --version        show version\n    -h, --help       this help\n\nUse \"easy1090 <command> --help\" for per-command options.\n\nstatus and open do not need sudo.\n"
+MSG[main_usage]="easy1090 %s - ADS-B stack in one command (Arch and derivatives)\n\nUSAGE\n    easy1090 <command> [options]\n\nCOMMANDS\n    install       install the stack (idempotent, safe to re-run)\n    update        update package versions (install converges config)\n    feed          enable and configure the ADSBExchange feed\n    uninstall     undo the installation (best effort)\n    status        what is running, what fell over, what is missing\n    start         bring up readsb, lighttpd and tar1090\n    stop          bring all three down\n    restart       restart all three, in the right order\n    open [target] open a component (without a target, lists the options)\n\nGLOBAL OPTIONS\n    --lang <pt|en>   interface language\n    --dry-run        print the exact commands, without executing\n    --yes            do not ask anything (except the sudo password)\n    --verbose        debug level logging\n    --version        show version\n    -h, --help       this help\n\nUse \"easy1090 <command> --help\" for per-command options.\n\nstatus and open do not need sudo.\n"
 MSG[cmd_unknown]="Unknown command: %s"
 MSG[cmd_missing]="Please provide a command. Use --help for the list."
 MSG[svc_step]="Services"
@@ -365,3 +365,39 @@ OPTIONS
     --yes               do not ask anything (except the sudo password)
     -h, --help          this help
 "
+
+#-------------------------------------------------------------------------------
+# Feed
+#-------------------------------------------------------------------------------
+MSG[feed_step_cfg]="ADSBExchange feed"
+MSG[feed_step_stats]="Stats package"
+MSG[feed_step_info]="Your feeder"
+MSG[feed_enabling]="Enabling the feed. Your position and the aircraft you receive will be sent to ADSBExchange."
+MSG[feed_disabling]="Disabling the feed. Nothing more will be shared."
+MSG[feed_already_on]="Feed is already enabled in the config."
+MSG[feed_already_off]="Feed is already disabled."
+MSG[feed_connected]="Connected to %s"
+MSG[feed_not_connected]="No established connection to ADSBExchange right now."
+MSG[feed_stats_present]="adsbexchange-stats service already installed and enabled."
+MSG[feed_stats_intro]="The stats package is third party code, from ADSBExchange, and its installer runs as root:"
+MSG[feed_stats_repo]="  %s"
+MSG[feed_stats_note]="Their script does not run on Arch: it calls adduser, which does not exist here, and dies before installing anything. easy1090 creates the system user first and resolves the dependencies, then hands the rest to their installer, unmodified."
+MSG[feed_stats_confirm]="Install the stats package?"
+MSG[feed_stats_skipped]="Stats package not installed."
+MSG[feed_stats_deps]="Making sure the script dependencies are present (%s)."
+MSG[feed_stats_user]="Creating the adsbexchange system user (their script uses adduser, absent on Arch)."
+MSG[feed_stats_user_ok]="User adsbexchange already exists."
+MSG[feed_stats_cloning]="Cloning the stats repository."
+MSG[feed_stats_running]="Running the official ADSBExchange installer."
+MSG[feed_stats_ok]="Stats package installed and running."
+MSG[feed_stats_failed]="The stats installer failed. Check: journalctl -u adsbexchange-stats -n 30"
+MSG[feed_uuid]="Feeder UUID: %s"
+MSG[feed_uuid_missing]="UUID not generated yet; the stats service creates it on first run."
+MSG[feed_url_stats]="  Your feeder statistics:     %s"
+MSG[feed_url_myip]="  Check that you are feeding: https://adsbexchange.com/myip/"
+MSG[feed_url_account]="  Link it to an account:      https://account.adsbexchange.com/ (use the UUID above)"
+MSG[feed_privacy]="Remember: with JSON_LOCATION_ACCURACY=%s, the published position is %s."
+MSG[feed_privacy_exact]="exact"
+MSG[feed_privacy_approx]="approximate"
+MSG[feed_privacy_none]="not published"
+MSG[feed_usage]="easy1090 %s - ADSBExchange feed\n\nUSAGE\n    easy1090 feed [options]\n\nWith no options: enables the feed, converges the readsb config and offers to\ninstall the ADSBExchange stats package.\n\nOPTIONS\n    --status            show the current state only, change nothing\n    --disable           disable the feed\n    --stats             install or repair the stats package only\n    --dry-run           print the exact commands, without executing\n    --yes               do not ask anything (except the sudo password)\n    -h, --help          this help\n\nFeeding sends your receiver position and the aircraft you receive to third\nparty servers.\n"

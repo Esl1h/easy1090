@@ -8,6 +8,8 @@ Two things are worth knowing before you run it:
 
 **It executes a third party script as root.** `vendor/tar1090-install.sh` comes from [wiedehopf/tar1090](https://github.com/wiedehopf/tar1090). It is vendored rather than downloaded at install time, so the exact bytes are visible in the repository and reviewable in a diff, and it is verified against `TAR1090_INSTALLER_SHA256` in your config before running. If the checksum does not match, easy1090 aborts instead of running it. Updating the pin is a deliberate act, documented in [vendor/README.md](vendor/README.md).
 
+`easy1090 feed` runs a second one: the ADSBExchange stats installer, cloned from [adsbexchange/adsbexchange-stats](https://github.com/adsbexchange/adsbexchange-stats). It is not vendored, because it is a moving git repository rather than a single file, so it cannot be pinned the same way. easy1090 states what it will run, points at the repository and asks for confirmation before doing it. Installing it is optional: feeding works without it, and the package only adds the feeder UUID and statistics reporting.
+
 **You can see everything first.** `easy1090 install --dry-run` runs the full read-only preflight and prints the exact commands it would execute, not descriptions of them. Reading that output before a real run is encouraged, and is the reason the flag exists.
 
 ## Privacy
