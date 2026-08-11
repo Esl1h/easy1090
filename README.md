@@ -58,9 +58,20 @@ On first run it asks for your interface language (Portuguese or English), your a
 ### Keeping it current
 
 ```bash
-yay -Syu                 # package versions, including readsb and the driver
+yay -Syu --devel         # AUR git packages yay installed: the driver, SDR++
 ./easy1090 install       # converges config and services after an update
 ```
+
+`--devel` is not optional here: every AUR package in this stack is a `-git` one, and a plain `yay -Syu` compares against the version declared in the AUR, which does not change when upstream commits. Without it, nothing is ever updated.
+
+**readsb is the exception.** It is built with `makepkg` outside yay, deliberately, so that a `prepare()` patch stays possible when a new GCC breaks the build. The cost is that yay does not track it and will never offer an update for it. To move it to the current upstream commit:
+
+```bash
+sudo pacman -R readsb-wiedehopf-git
+./easy1090 install       # rebuilds from a fresh clone of upstream HEAD
+```
+
+Check what you are running with `pacman -Q readsb-wiedehopf-git`: the `.gXXXXXXX` suffix is the upstream commit it was built from.
 
 ### After installing
 
