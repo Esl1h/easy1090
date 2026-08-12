@@ -36,6 +36,20 @@ The message you see on the ADSBExchange site ("You do not have the stats package
 
 Two lesser Debianisms in the same script are harmless: `ischroot` is missing on Arch but only used as an `if` condition, and `vcgencmd` is Raspberry Pi only, likewise guarded.
 
+### The airplanes.live installer has the same `adduser` bug
+
+Independently written, same failure. `update.sh` runs under `set -e` and calls, at line 164:
+
+```bash
+adduser --system --home "$IPATH" --no-create-home --quiet "$UNAME" || adduser --system --home-dir "$IPATH" --no-create-home "$UNAME"
+```
+
+The comment above it says the second form is "for fedora / centos", but both are `adduser`, which does not exist on Arch at all. There is no `useradd` fallback, so the script dies there.
+
+A second gap in the same file: the dependency install is an `if apt / elif yum / elif dnf / fi` chain with no `else`. On Arch nothing is installed, silently, and the script carries on until something needs `socat` or a Python venv.
+
+easy1090 sidesteps all of it. For ADS-B, feeding airplanes.live needs no package at all: it is a `--net-connector` on the readsb you already run, using the same string their own installer writes. Their installer is only necessary for MLAT, which needs a separate client.
+
 ### The stats service finds no data source when readsb feeds directly
 
 Installing the stats package is not enough. Their `json-status` looks only at `/run/adsbexchange-feed`, the directory created by the ADSBExchange *feed* package. easy1090 feeds straight from readsb with a `--net-connector`, so the JSON lives in `/run/readsb` and the service loops every 20 seconds with:

@@ -114,10 +114,13 @@ Dois pontos que merecem atenção antes da primeira execução:
 Para ligar e configurar o pacote de estatísticas:
 
 ```bash
-./easy1090 feed             # habilita, converge, instala o stats e mostra seu UUID
-./easy1090 feed --status    # somente leitura: você está mesmo conectado?
-./easy1090 feed --disable
+./easy1090 feed                    # lista as redes e o estado de cada uma
+./easy1090 feed adsbexchange       # habilita, com o pacote de estatísticas e o UUID
+./easy1090 feed airplaneslive      # habilita (o readsb envia direto)
+./easy1090 feed adsbexchange --disable
 ```
+
+Dá para alimentar as duas ao mesmo tempo: são conectores independentes no mesmo readsb. O airplanes.live não precisa de pacote extra para o ADS-B; o instalador deles existe para o MLAT, que exige cliente separado e, diferente do ADS-B, exige mesmo a sua posição exata.
 
 `FEEDER_ADSBEXCHANGE` vem desligado. Habilitar compartilha seus dados e sua posição com terceiros, então é opt-in por decisão, não por esquecimento. O instalador pergunta isso explicitamente na primeira execução.
 

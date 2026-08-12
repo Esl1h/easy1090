@@ -327,6 +327,7 @@ cfg::_apply_defaults() {
     NET_BO_PORT="${NET_BO_PORT:-30005}"
 
     FEEDER_ADSBEXCHANGE="${FEEDER_ADSBEXCHANGE:-false}"
+    FEEDER_AIRPLANESLIVE="${FEEDER_AIRPLANESLIVE:-false}"
     FEEDER_ASKED="${FEEDER_ASKED:-false}"
 
     TAR1090_INSTALLER_SHA256="${TAR1090_INSTALLER_SHA256:-}"
@@ -379,7 +380,7 @@ cfg::require_feeder() {
     local answer
 
     # Already decided (config edited by hand or previous run), or no one to ask.
-    if [[ "$FEEDER_ADSBEXCHANGE" == true ]]; then
+    if [[ "$FEEDER_ADSBEXCHANGE" == true || "$FEEDER_AIRPLANESLIVE" == true ]]; then
         return 0
     fi
     if [[ "$DRY_RUN" == true || "$ASSUME_YES" == true ]]; then
@@ -387,11 +388,12 @@ cfg::require_feeder() {
     fi
     [[ -f "$config_file" ]] && grep -qE '^FEEDER_ASKED="true"' "$config_file" && return 0
 
-    printf '\n%s\n%s\n\n%s\n%s\n\n%s\n\n' \
+    printf '\n%s\n%s\n\n%s\n%s\n%s\n\n%s\n\n' \
         "$(t feed_title)" \
         "$(t feed_explain)" \
         "$(t feed_opt_none)" \
         "$(t feed_opt_adsbx)" \
+        "$(t feed_opt_alive)" \
         "$(t feed_fa_note)" >&2
 
     read -r -p "$(t feed_prompt)" answer
@@ -400,6 +402,10 @@ cfg::require_feeder() {
     2)
         FEEDER_ADSBEXCHANGE=true
         cfg::_persist "$config_file" FEEDER_ADSBEXCHANGE "true"
+        ;;
+    3)
+        FEEDER_AIRPLANESLIVE=true
+        cfg::_persist "$config_file" FEEDER_AIRPLANESLIVE "true"
         ;;
     *)
         log::info "$(t feed_none)"

@@ -6,6 +6,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+### Added
+
+- airplanes.live as a second feed network. `easy1090 feed` now lists the networks and their state instead of assuming ADSBExchange, and takes the network as an argument: `easy1090 feed airplaneslive`. Both can be fed at once, since they are independent connectors on the same readsb.
+
 ## [0.2.0] - 2026-08-11
 
 Two new commands, both born from things that went wrong on a real machine.

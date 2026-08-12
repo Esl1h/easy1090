@@ -114,10 +114,13 @@ Two settings worth reading before the first run:
 Turn it on, and set up the statistics package, with:
 
 ```bash
-./easy1090 feed             # enable, converge, install stats, print your UUID
-./easy1090 feed --status    # read-only: are you actually connected?
-./easy1090 feed --disable
+./easy1090 feed                    # list the networks and their state
+./easy1090 feed adsbexchange       # enable, plus their stats package and UUID
+./easy1090 feed airplaneslive      # enable (readsb feeds it directly)
+./easy1090 feed adsbexchange --disable
 ```
+
+Both can be fed at once: they are independent connectors on the same readsb. airplanes.live needs no extra package for ADS-B; their installer exists for MLAT, which needs a separate client and, unlike ADS-B, does require your exact position.
 
 `FEEDER_ADSBEXCHANGE` is off. Enabling it shares your data and your position with a third party, so it is opt-in by decision, never by oversight. The installer asks explicitly on first run.
 

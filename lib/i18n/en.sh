@@ -305,7 +305,7 @@ Does not remove lighttpd or jq, which are general purpose packages.
 #-------------------------------------------------------------------------------
 # Entrypoint, services and open
 #-------------------------------------------------------------------------------
-MSG[main_usage]="easy1090 %s - ADS-B stack in one command (Arch and derivatives)\n\nUSAGE\n    easy1090 <command> [options]\n\nCOMMANDS\n    install       install the stack (idempotent, safe to re-run)\n    update        update package versions (install converges config)\n    feed          enable and configure the ADSBExchange feed\n    uninstall     undo the installation (best effort)\n    status        what is running, what fell over, what is missing\n    start         bring up readsb, lighttpd and tar1090\n    stop          bring all three down\n    restart       restart all three, in the right order\n    open [target] open a component (without a target, lists the options)\n\nGLOBAL OPTIONS\n    --lang <pt|en>   interface language\n    --dry-run        print the exact commands, without executing\n    --yes            do not ask anything (except the sudo password)\n    --verbose        debug level logging\n    --version        show version\n    -h, --help       this help\n\nUse \"easy1090 <command> --help\" for per-command options.\n\nstatus and open do not need sudo.\n"
+MSG[main_usage]="easy1090 %s - ADS-B stack in one command (Arch and derivatives)\n\nUSAGE\n    easy1090 <command> [options]\n\nCOMMANDS\n    install       install the stack (idempotent, safe to re-run)\n    update        update package versions (install converges config)\n    feed          feed public networks (ADSBExchange, airplanes.live)\n    uninstall     undo the installation (best effort)\n    status        what is running, what fell over, what is missing\n    start         bring up readsb, lighttpd and tar1090\n    stop          bring all three down\n    restart       restart all three, in the right order\n    open [target] open a component (without a target, lists the options)\n\nGLOBAL OPTIONS\n    --lang <pt|en>   interface language\n    --dry-run        print the exact commands, without executing\n    --yes            do not ask anything (except the sudo password)\n    --verbose        debug level logging\n    --version        show version\n    -h, --help       this help\n\nUse \"easy1090 <command> --help\" for per-command options.\n\nstatus and open do not need sudo.\n"
 MSG[cmd_unknown]="Unknown command: %s"
 MSG[cmd_missing]="Please provide a command. Use --help for the list."
 MSG[svc_step]="Services"
@@ -369,7 +369,7 @@ OPTIONS
 #-------------------------------------------------------------------------------
 # Feed
 #-------------------------------------------------------------------------------
-MSG[feed_step_cfg]="ADSBExchange feed"
+MSG[feed_step_cfg]="Feeds"
 MSG[feed_step_stats]="Stats package"
 MSG[feed_step_info]="Your feeder"
 MSG[feed_enabling]="Enabling the feed. Your position and the aircraft you receive will be sent to ADSBExchange."
@@ -400,9 +400,24 @@ MSG[feed_privacy]="Remember: with JSON_LOCATION_ACCURACY=%s, the published posit
 MSG[feed_privacy_exact]="exact"
 MSG[feed_privacy_approx]="approximate"
 MSG[feed_privacy_none]="not published"
-MSG[feed_usage]="easy1090 %s - ADSBExchange feed\n\nUSAGE\n    easy1090 feed [options]\n\nWith no options: enables the feed, converges the readsb config and offers to\ninstall the ADSBExchange stats package.\n\nOPTIONS\n    --status            show the current state only, change nothing\n    --disable           disable the feed\n    --stats             install or repair the stats package only\n    --dry-run           print the exact commands, without executing\n    --yes               do not ask anything (except the sudo password)\n    -h, --help          this help\n\nFeeding sends your receiver position and the aircraft you receive to third\nparty servers.\n"
+MSG[feed_usage]="easy1090 %s - public network feeds\n\nUSAGE\n    easy1090 feed [network] [options]\n\nWith no arguments: lists the networks and their state, changing nothing.\n\nNETWORKS\n    adsbexchange        enable and install their statistics package\n    airplaneslive       enable (readsb sends directly, no extra package)\n\nYou can feed both at once: they are independent connections.\n\nOPTIONS\n    --status            show the current state only, change nothing\n    --disable           disable the given network\n    --stats             install or repair the ADSBExchange package only\n    --dry-run           print the exact commands, without executing\n    --yes               do not ask anything (except the sudo password)\n    -h, --help          this help\n\nFeeding sends your IP and the aircraft you receive to third parties.\n"
 MSG[feed_datasource_fix]="Pointing stats at /run/readsb (by default it only looks at /run/adsbexchange-feed, from their own feed package)."
 MSG[feed_datasource_ok]="Stats data source already configured."
 MSG[feed_datasource_restart]="Restarting adsbexchange-stats to apply it."
 MSG[feed_datasource_working]="Stats is reading data from readsb."
 MSG[feed_datasource_wait]="Stats has not confirmed reading yet; check: journalctl -u adsbexchange-stats -n 20"
+MSG[feed_net_adsbx]="ADSBExchange"
+MSG[feed_net_alive]="airplanes.live"
+MSG[feed_list_title]="Available networks:"
+MSG[feed_list_adsbx]="  adsbexchange   %s   does not filter aircraft; sold to JETNET in 2023"
+MSG[feed_list_alive]="  airplaneslive  %s   community run, unfiltered, started after that sale"
+MSG[feed_list_on]="[on]       "
+MSG[feed_list_off]="[off]      "
+MSG[feed_list_hint]="To turn one on or off:\n  easy1090 feed <network>\n  easy1090 feed <network> --disable\n\nYou can feed both at once: they are independent connections."
+MSG[feed_unknown_net]="Unknown network: %s. Use adsbexchange or airplaneslive."
+MSG[feed_alive_enabling]="Enabling the airplanes.live feed. Your position is not sent, but your IP and the aircraft you receive are."
+MSG[feed_alive_disabling]="Disabling the airplanes.live feed."
+MSG[feed_alive_note]="airplanes.live needs no extra package for ADS-B: readsb sends it directly. Their official installer is for people who also want to feed MLAT, which requires a separate client."
+MSG[feed_alive_url]="  Your feed status:  https://airplanes.live/myfeed/"
+MSG[feed_alive_map]="  Network map:       https://globe.airplanes.live/"
+MSG[feed_opt_alive]="  3) airplanes.live (community run, unfiltered, started after the ADSBExchange sale)"

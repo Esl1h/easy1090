@@ -106,6 +106,12 @@ readsb::configure() {
         log::warn "$(t feed_enabled "ADSBExchange")"
         net_connectors+=" --net-connector feed.adsbexchange.com,30005,beast_reduce_out"
     fi
+    if [[ "$FEEDER_AIRPLANESLIVE" == true ]]; then
+        log::warn "$(t feed_enabled "airplanes.live")"
+        # Same connector string their own installer writes, including the
+        # failover endpoint on 64004.
+        net_connectors+=" --net-connector feed.airplanes.live,30004,beast_reduce_plus_out,feed.airplanes.live,64004"
+    fi
     [[ -n "$net_connectors" ]] && net_options+="$net_connectors"
 
     json_options="--json-location-accuracy ${JSON_LOCATION_ACCURACY} --range-outline-hours 24"

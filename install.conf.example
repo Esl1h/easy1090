@@ -108,6 +108,13 @@ NET_BO_PORT="30005"        # Beast out (this is where viewadsb reads from)
 #     cliente piaware, com registro e ID de feeder próprios. Um --net-connector
 #     simples para piaware.flightaware.com não alimenta nada.
 FEEDER_ADSBEXCHANGE="false"
+
+# EN  airplanes.live, community run and unfiltered, started after the JETNET
+#     sale. Fed by readsb directly, no extra package needed for ADS-B.
+# PT  airplanes.live, comunitária e sem filtro, criada depois da venda para a
+#     JETNET. Alimentada direto pelo readsb, sem pacote extra para o ADS-B.
+FEEDER_AIRPLANESLIVE="false"
+
 FEEDER_ASKED="false"
 
 #-------------------------------------------------------------------------------

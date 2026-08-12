@@ -22,7 +22,8 @@
 #===============================================================================
 
 # -g: sourced from inside load_modules().
-declare -g FEED_ACTION="enable"
+declare -g FEED_ACTION="list"
+declare -g FEED_NETWORK=""
 
 readonly FEED_HOST="feed.adsbexchange.com"
 readonly FEED_STATS_REPO="https://github.com/adsbexchange/adsbexchange-stats"
@@ -43,7 +44,7 @@ cmd::feed() {
     cfg::load "$CONFIG_FILE" "$CONFIG_EXAMPLE"
 
     case "$FEED_ACTION" in
-    status)
+    list | status)
         feed::show_status
         return 0
         ;;
@@ -62,8 +63,17 @@ cmd::feed() {
         trap 'sudo::cleanup' EXIT
         sudo::init
         feed::set_enabled true
-        feed::install_stats
-        feed::show_info
+        # Only ADSBExchange has a separate stats package. airplanes.live shows
+        # the feed on their site straight from the connector.
+        if [[ "$FEED_NETWORK" == "adsbexchange" ]]; then
+            feed::install_stats
+            feed::show_info
+        else
+            printf '\n%s\n\n%s\n%s\n\n' \
+                "$(t feed_alive_note)" \
+                "$(t feed_alive_url)" \
+                "$(t feed_alive_map)" >&2
+        fi
         ;;
     esac
 }
@@ -72,8 +82,22 @@ feed::parse_args() {
     while [[ $# -gt 0 ]]; do
         case "$1" in
         --status) FEED_ACTION="status" ;;
-        --disable) FEED_ACTION="disable" ;;
-        --stats) FEED_ACTION="stats" ;;
+        --disable)
+            FEED_ACTION="disable"
+            [[ -z "$FEED_NETWORK" ]] && FEED_NETWORK="adsbexchange"
+            ;;
+        --stats)
+            FEED_ACTION="stats"
+            FEED_NETWORK="adsbexchange"
+            ;;
+        adsbexchange | adsbx)
+            FEED_NETWORK="adsbexchange"
+            [[ "$FEED_ACTION" == "list" ]] && FEED_ACTION="enable"
+            ;;
+        airplaneslive | airplanes.live | alive)
+            FEED_NETWORK="airplaneslive"
+            [[ "$FEED_ACTION" == "list" ]] && FEED_ACTION="enable"
+            ;;
         -h | --help)
             t feed_usage "$EASY1090_VERSION"
             exit 0
@@ -96,17 +120,30 @@ feed::parse_args() {
 # --net-connector on the running process.
 feed::set_enabled() {
     local wanted="$1"
+    local key current
+
+    if [[ "$FEED_NETWORK" == "airplaneslive" ]]; then
+        key="FEEDER_AIRPLANESLIVE"
+        current="$FEEDER_AIRPLANESLIVE"
+    else
+        key="FEEDER_ADSBEXCHANGE"
+        current="$FEEDER_ADSBEXCHANGE"
+    fi
 
     log::step "$(t feed_step_cfg)"
 
-    if [[ "$FEEDER_ADSBEXCHANGE" == "$wanted" ]]; then
+    if [[ "$current" == "$wanted" ]]; then
         [[ "$wanted" == true ]] && log::skip "$(t feed_already_on)" || log::skip "$(t feed_already_off)"
     else
-        [[ "$wanted" == true ]] && log::warn "$(t feed_enabling)" || log::info "$(t feed_disabling)"
-        FEEDER_ADSBEXCHANGE="$wanted"
-        [[ "$DRY_RUN" == true ]] ||
-            cfg::_persist "$CONFIG_FILE" FEEDER_ADSBEXCHANGE "$wanted"
-        cfg::_persist_dry "FEEDER_ADSBEXCHANGE" "$wanted"
+        if [[ "$FEED_NETWORK" == "airplaneslive" ]]; then
+            [[ "$wanted" == true ]] && log::warn "$(t feed_alive_enabling)" || log::info "$(t feed_alive_disabling)"
+            FEEDER_AIRPLANESLIVE="$wanted"
+        else
+            [[ "$wanted" == true ]] && log::warn "$(t feed_enabling)" || log::info "$(t feed_disabling)"
+            FEEDER_ADSBEXCHANGE="$wanted"
+        fi
+        [[ "$DRY_RUN" == true ]] || cfg::_persist "$CONFIG_FILE" "$key" "$wanted"
+        cfg::_persist_dry "$key" "$wanted"
     fi
 
     # Rewrites /etc/default/readsb and restarts only if the content changed.
@@ -283,11 +320,15 @@ feed::privacy_note() {
 feed::show_status() {
     log::step "$(t feed_step_cfg)"
 
-    if [[ "$FEEDER_ADSBEXCHANGE" == true ]]; then
-        log::success "$(t feed_already_on)"
-    else
-        log::info "$(t feed_already_off)"
-    fi
+    local adsbx alive
+    [[ "$FEEDER_ADSBEXCHANGE" == true ]] && adsbx="$(t feed_list_on)" || adsbx="$(t feed_list_off)"
+    [[ "$FEEDER_AIRPLANESLIVE" == true ]] && alive="$(t feed_list_on)" || alive="$(t feed_list_off)"
+
+    printf '\n%s\n%s\n%s\n\n%s\n\n' \
+        "$(t feed_list_title)" \
+        "$(t feed_list_adsbx "$adsbx")" \
+        "$(t feed_list_alive "$alive")" \
+        "$(t feed_list_hint)" >&2
 
     local peer
     # Column 4 is the peer, so this only matches connections we opened out to
