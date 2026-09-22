@@ -1,0 +1,27 @@
+title: easy1090
+description: One command ADS-B receiver stack for Arch Linux: RTL-SDR driver, readsb and the tar1090 web map.
+
+# Just the Docs is on the GitHub Pages supported themes list, so it works
+# without any build step beyond Jekyll itself.
+theme: just-the-docs
+
+url: https://esl1h.github.io/easy1090
+
+aux_links:
+  Repository:
+    - "https://github.com/Esl1h/easy1090"
+
+# Open aux links in a new tab
+aux_links_new_tab: true
+
+color_scheme: dark
+
+# Keyboard shortcut for search
+search:
+  button: false
+
+footer_content: "MIT licensed. Needs an RTL-SDR, an AUR helper and a real terminal."
+
+# Back to top link
+back_to_top: true
+back_to_top_text: "Back to top"
