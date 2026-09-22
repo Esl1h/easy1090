@@ -1,6 +1,6 @@
 layout: single
 title: Design decisions
-permalink: /design/
+permalink: /design
 description: The Arch specific friction easy1090 resolves, and why each workaround looks the way it does.
 toc: true
 toc_label: "On this page"

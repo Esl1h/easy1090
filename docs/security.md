@@ -1,6 +1,6 @@
 layout: single
 title: Security
-permalink: /security/
+permalink: /security
 description: What runs as root, how it is made auditable, and what never gets escalated.
 toc: true
 toc_label: "On this page"

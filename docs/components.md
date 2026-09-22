@@ -1,6 +1,6 @@
 layout: single
 title: Components
-permalink: /components/
+permalink: /components
 description: Every dependency easy1090 installs, what each one does and why the fork choices were made.
 toc: true
 toc_label: "On this page"
@@ -63,7 +63,7 @@ Your antenna coordinates go into `/etc/default/readsb` and drive range and dista
 
 ## Web layer: tar1090 on lighttpd
 
-[tar1090](https://github.com/wiedehopf/tar1090) is the live map: aircraft read from `/run/readsb/aircraft.json`, trails colored by altitude, a clickable panel per flight enriched with the aircraft database. There is no tar1090 package in the AUR, so easy1090 vendors upstream's official installer, pins it by SHA-256, reviews updates deliberately and runs it as a separate program (see [security](/easy1090/security/)).
+[tar1090](https://github.com/wiedehopf/tar1090) is the live map: aircraft read from `/run/readsb/aircraft.json`, trails colored by altitude, a clickable panel per flight enriched with the aircraft database. There is no tar1090 package in the AUR, so easy1090 vendors upstream's official installer, pins it by SHA-256, reviews updates deliberately and runs it as a separate program (see [security](/easy1090/security)).
 
 Two extra services enter here as dependencies:
 

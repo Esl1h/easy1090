@@ -71,4 +71,4 @@ The manual walkthrough, with the reasoning behind every choice, is the SDR serie
 
 This site condenses it, and [the components page][components] continues the job for each installed piece.
 
-[components]: /easy1090/components/
+[components]: /easy1090/components

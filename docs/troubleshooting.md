@@ -1,6 +1,6 @@
 layout: single
 title: Troubleshooting
-permalink: /troubleshooting/
+permalink: /troubleshooting
 description: Behaviors that look like bugs but are not, and the third party quirks easy1090 works around.
 toc: true
 toc_label: "On this page"
@@ -38,7 +38,7 @@ Their `update.sh` is for the MLAT client, which easy1090 does not need for ADS-B
 ./easy1090 update
 ```
 
-Runs `yay -Syu --devel` (required: AUR `-git` packages never move in a plain `yay -Syu`, the reasoning is on the [design page](/easy1090/design/)) and then handles readsb itself, comparing the installed commit with upstream HEAD. The `.gXXXXXXX` suffix printed by `pacman -Q readsb-wiedehopf-git` is the upstream commit the package was built from.
+Runs `yay -Syu --devel` (required: AUR `-git` packages never move in a plain `yay -Syu`, the reasoning is on the [design page](/easy1090/design)) and then handles readsb itself, comparing the installed commit with upstream HEAD. The `.gXXXXXXX` suffix printed by `pacman -Q readsb-wiedehopf-git` is the upstream commit the package was built from.
 
 ## Two things not yet exercised by real hardware tests
 
