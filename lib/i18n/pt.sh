@@ -35,6 +35,7 @@ MSG[pos_required]="Latitude e longitude são obrigatórias."
 MSG[pos_required_yes]="RECEIVER_LAT/RECEIVER_LON são obrigatórios com --yes. Preencha %s."
 MSG[pos_dry]="RECEIVER_LAT/RECEIVER_LON vazios; usaria valores informados na execução real."
 MSG[pos_saved]="Posição gravada em %s"
+MSG[pos_invalid]="Coordenadas inválidas: %s, %s. Use graus decimais com ponto, latitude entre -90 e 90, longitude entre -180 e 180."
 
 #-------------------------------------------------------------------------------
 # Compartilhamento de dados

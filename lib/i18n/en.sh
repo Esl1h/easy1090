@@ -35,6 +35,7 @@ MSG[pos_required]="Latitude and longitude are required."
 MSG[pos_required_yes]="RECEIVER_LAT/RECEIVER_LON are required with --yes. Fill them in %s."
 MSG[pos_dry]="RECEIVER_LAT/RECEIVER_LON are empty; a real run would use the values you provide."
 MSG[pos_saved]="Position saved to %s"
+MSG[pos_invalid]="Invalid coordinates: %s, %s. Use decimal degrees with a dot, latitude between -90 and 90, longitude between -180 and 180."
 
 #-------------------------------------------------------------------------------
 # Data sharing
