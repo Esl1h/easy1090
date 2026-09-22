@@ -441,9 +441,18 @@ cfg::require_feeder() {
 
 cfg::_persist() {
     local file="$1" key="$2" value="$3"
+    # sed replacement semantics: & expands to the match, | is our delimiter.
+    local esc="${value//\\/\\\\}"
+    esc="${esc//&/\\&}"
+    esc="${esc//|/\\|}"
+
+    if [[ "$DRY_RUN" == true ]]; then
+        log::dry_run "sed -i 's|^$key=.*|$key=\"$esc\"|' $file"
+        return 0
+    fi
 
     if grep -qE "^${key}=" "$file"; then
-        sed -i "s|^${key}=.*|${key}=\"${value}\"|" "$file"
+        sed -i "s|^${key}=.*|${key}=\"${esc}\"|" "$file"
     else
         printf '%s="%s"\n' "$key" "$value" >>"$file"
     fi
