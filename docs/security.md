@@ -1,9 +1,9 @@
----
-layout: default
+layout: single
 title: Security
-nav_order: 6
 permalink: /security/
 description: What runs as root, how it is made auditable, and what never gets escalated.
+toc: true
+toc_label: "On this page"
 ---
 
 # Security model

@@ -1,10 +1,9 @@
----
-layout: default
+layout: single
 title: Components
-nav_order: 2
-has_children: false
 permalink: /components/
 description: Every dependency easy1090 installs, what each one does and why the fork choices were made.
+toc: true
+toc_label: "On this page"
 ---
 
 # What easy1090 installs, piece by piece
@@ -30,7 +29,7 @@ The `install ... /bin/false` line is the one that actually closes the door, and 
 
 The station itself on the reference install: the kit's flexible tripod clamped to the homelab mini PC, the small antenna vertical (ADS-B is vertically polarized; a quarter wave at 1090 MHz is about 6.9 cm):
 
-![Homelab mini PC with the antenna tripod on top and the antenna extended vertically](assets/img/server-antena.webp)
+![Homelab mini PC with the antenna tripod on top and the antenna extended vertically](/easy1090/assets/img/server-antena.webp)
 
 ## Decoding: readsb
 
@@ -56,7 +55,7 @@ It is built with `makepkg` outside `yay`, deliberately, so a `prepare()` patch s
 
 The same aircraft as the terminal sees them: `viewadsb` with callsign and RSSI on the left, the SBS CSV stream straight out of port 30003 on the right (TAM, Aerolíneas Argentinas and Lufthansa over the region that day):
 
-![Three terminals: viewadsb listing aircraft, a live summary view and the raw SBS stream via nc on port 30003](assets/img/terminal-viewadsb-nc.webp)
+![Three terminals: viewadsb listing aircraft, a live summary view and the raw SBS stream via nc on port 30003](/easy1090/assets/img/terminal-viewadsb-nc.webp)
 
 ### Position and privacy
 
@@ -64,7 +63,7 @@ Your antenna coordinates go into `/etc/default/readsb` and drive range and dista
 
 ## Web layer: tar1090 on lighttpd
 
-[tar1090](https://github.com/wiedehopf/tar1090) is the live map: aircraft read from `/run/readsb/aircraft.json`, trails colored by altitude, a clickable panel per flight enriched with the aircraft database. There is no tar1090 package in the AUR, so easy1090 vendors upstream's official installer, pins it by SHA-256, reviews updates deliberately and runs it as a separate program (see [security](security.md)).
+[tar1090](https://github.com/wiedehopf/tar1090) is the live map: aircraft read from `/run/readsb/aircraft.json`, trails colored by altitude, a clickable panel per flight enriched with the aircraft database. There is no tar1090 package in the AUR, so easy1090 vendors upstream's official installer, pins it by SHA-256, reviews updates deliberately and runs it as a separate program (see [security](/easy1090/security/)).
 
 Two extra services enter here as dependencies:
 
@@ -107,4 +106,4 @@ open        viewadsb in the terminal, the map URL, the GUIs
 
 On a connect to an aircraft, the map answers the classic "what plane is that?" in a tooltip, before opening the full panel: a South African Airways A330 climbing through 9,250 feet, with registration, route, altitude and speed:
 
-![tar1090 tooltip for flight SAA227, an Airbus A330, with registration, altitude and speed](assets/img/tar1090-voo.webp)
+![tar1090 tooltip for flight SAA227, an Airbus A330, with registration, altitude and speed](/easy1090/assets/img/tar1090-voo.webp)

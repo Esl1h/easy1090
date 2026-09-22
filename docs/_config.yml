@@ -1,27 +1,21 @@
 title: easy1090
-description: "One command ADS-B receiver stack for Arch Linux: RTL-SDR driver, readsb and the tar1090 web map."
+description: "One command installer for a complete ADS-B receiver on Arch Linux: RTL-SDR driver, readsb and the tar1090 web map."
 
-# jekyll-remote-theme: the default Pages gem set does not ship the theme gem,
-# but resolves remote themes natively.
-remote_theme: just-the-docs/just-the-docs@v0.10.1
+# The default Pages gem set does not ship the theme gem; remote_theme is
+# resolved natively by the github-pages gem. Pinned for determinism.
+remote_theme: mmistakes/minimal-mistakes@4.28.1
+minimal_mistakes_skin: dark
 
-url: https://esl1h.github.io/easy1090
+# minimal-mistakes uses include_cached, provided by this whitelisted plugin
+plugins:
+  - jekyll-include-cache
+  - jekyll-remote-theme
 
-aux_links:
-  Repository:
-    - "https://github.com/Esl1h/easy1090"
+url: "https://esli.cafe"
+baseurl: "/easy1090"
 
-# Open aux links in a new tab
-aux_links_new_tab: true
+search: true
+search_provider: lunr
+breadcrumbs: true
 
-color_scheme: dark
-
-# Keyboard shortcut for search
-search:
-  button: false
-
-footer_content: "MIT licensed. Needs an RTL-SDR, an AUR helper and a real terminal."
-
-# Back to top link
-back_to_top: true
-back_to_top_text: "Back to top"
+# Header navigation lives in _data/navigation.yml

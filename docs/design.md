@@ -1,10 +1,9 @@
----
-layout: default
-parent: How it works
+layout: single
 title: Design decisions
-nav_order: 1
-permalink: /how-it-works/design/
+permalink: /design/
 description: The Arch specific friction easy1090 resolves, and why each workaround looks the way it does.
+toc: true
+toc_label: "On this page"
 ---
 
 # Design decisions

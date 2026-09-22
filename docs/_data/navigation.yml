@@ -1,0 +1,17 @@
+main:
+  - title: "Home"
+    url: /
+  - title: "Components"
+    url: /components/
+  - title: "Design decisions"
+    url: /design/
+  - title: "Troubleshooting"
+    url: /troubleshooting/
+  - title: "Security"
+    url: /security/
+  - title: "GitHub"
+    url: https://github.com/Esl1h/easy1090
+
+# footer:
+#   - title: "Repository"
+#     url: https://github.com/Esl1h/easy1090

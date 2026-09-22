@@ -1,22 +1,14 @@
----
-layout: default
-title: Home
-nav_order: 1
 permalink: /
-description: One command installer for a complete ADS-B receiver on Arch Linux.
+layout: single
+title: easy1090
+excerpt: "Your own flight tracking, from the RF signal to the map, on Arch Linux, in one command."
+last_modified_at: 2026-09-22
 ---
-
-# Your own flight tracking, from the RF signal to the map
-{: .fs-9 }
 
 ADS-B is the signal every aircraft broadcasts on 1090 MHz: position, altitude, speed, callsign, in the open, no subscription, no authentication. easy1090 turns your Arch machine into a receiver for that signal with one command, and deals with every pitfall the generic guides leave out.
-{: .fs-6 .fw-300 }
 
 ![Airport radar tower underneath the approach route](assets/img/hero-airport.jpg)
-{: .rounded }
-
-Photo by [Peter Xie](https://www.pexels.com/pt-br/@peter-xie-371876898/) on Pexels.
-{: .text-right .fs-2 }
+*Photo by [Peter Xie](https://www.pexels.com/pt-br/@peter-xie-371876898/) on Pexels.*
 
 ## One command
 
@@ -70,10 +62,13 @@ Read-only preflight, with the exact commands printed: the same lines a real run 
 
 ## Context
 
-The manual walkthrough, with the reasoning behind every choice, is the five part SDR series on the author's blog (in Portuguese):
+The manual walkthrough, with the reasoning behind every choice, is the SDR series on the author's blog (in Portuguese):
 
 - [Capturing ADS-B at 1090 MHz with the RTL-SDR v4](https://esli.blog/posts/rtl-sdr-v4-adsb-1090/)
 - [From terminal to map: live ADS-B on the web with tar1090](https://esli.blog/posts/rtl-sdr-v4-tar1090/)
 - [Practical guide: every way to watch ADS-B in real time](https://esli.blog/posts/guia-visualizacao-adsb/)
+- [easy1090: an ADS-B installer for Arch Linux](https://esli.blog/posts/adsb-on-arch-linux/)
 
-This site condenses it, and [the components page](components.md) continues the job for each installed piece.
+This site condenses it, and [the components page][components] continues the job for each installed piece.
+
+[components]: /easy1090/components/
