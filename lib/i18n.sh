@@ -78,9 +78,11 @@ i18n::prompt() {
 }
 
 # Reads UI_LANGUAGE from the config without sourcing it: this runs before
-# cfg::load, and an empty value has to read as "not set".
+# cfg::load, and an empty value has to read as "not set". The quotes are
+# optional: cfg::_persist writes with them, a hand edit may not.
 i18n::_from_config() {
-    grep -E '^UI_LANGUAGE=' "$1" 2>/dev/null | head -1 | cut -d'"' -f2
+    grep -E '^UI_LANGUAGE=' "$1" 2>/dev/null | head -1 |
+        sed -E 's/^UI_LANGUAGE="?([^"]*)"?[^"]*$/\1/'
 }
 
 i18n::init() {

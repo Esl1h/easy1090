@@ -21,6 +21,9 @@ cmd::install() {
     cfg::load "$CONFIG_FILE" "$CONFIG_EXAMPLE"
     install::apply_overrides
     cfg::require_position "$CONFIG_FILE"
+    # Remember CLI coordinates so the next run does not ask again.
+    [[ -n "$CLI_LAT" ]] && cfg::_persist "$CONFIG_FILE" RECEIVER_LAT "$CLI_LAT"
+    [[ -n "$CLI_LON" ]] && cfg::_persist "$CONFIG_FILE" RECEIVER_LON "$CLI_LON"
     cfg::require_feeder "$CONFIG_FILE"
 
     trap 'sudo::cleanup' EXIT
@@ -63,10 +66,17 @@ install::parse_args() {
     return 0
 }
 
-# CLI wins over install.conf.
+# CLI wins over install.conf, and coordinates given here are remembered in
+# install.conf, exactly like the ones asked on the first run.
 install::apply_overrides() {
-    [[ -n "$CLI_LAT" ]] && RECEIVER_LAT="$CLI_LAT"
-    [[ -n "$CLI_LON" ]] && RECEIVER_LON="$CLI_LON"
+    if [[ -n "$CLI_LAT" ]]; then
+        cfg::validate_position "$CLI_LAT" "${CLI_LON:-0.0}"
+        RECEIVER_LAT="$CLI_LAT"
+    fi
+    if [[ -n "$CLI_LON" ]]; then
+        cfg::validate_position "${CLI_LAT:-0.0}" "$CLI_LON"
+        RECEIVER_LON="$CLI_LON"
+    fi
 
     if [[ "$CLI_FULL" == true ]]; then
         COMPONENT_TAR1090=true

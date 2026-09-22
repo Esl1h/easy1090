@@ -338,6 +338,7 @@ cfg::require_position() {
     local config_file="$1"
 
     if [[ -n "${RECEIVER_LAT:-}" && -n "${RECEIVER_LON:-}" ]]; then
+        cfg::validate_position "$RECEIVER_LAT" "$RECEIVER_LON"
         log::debug "position: $RECEIVER_LAT, $RECEIVER_LON"
         return 0
     fi
@@ -367,10 +368,33 @@ cfg::require_position() {
     read -r -p "$(t pos_lon)" RECEIVER_LON
 
     [[ -n "$RECEIVER_LAT" && -n "$RECEIVER_LON" ]] || util::die "$(t pos_required)"
+    cfg::validate_position "$RECEIVER_LAT" "$RECEIVER_LON"
 
-    cfg::_persist "$config_file" RECEIVER_LAT "$RECEIVER_LAT"
-    cfg::_persist "$config_file" RECEIVER_LON "$RECEIVER_LON"
-    log::success "$(t pos_saved "$config_file")"
+    if [[ "$DRY_RUN" == true ]]; then
+        # A dry-run must not touch install.conf; the values here are throwaway.
+        log::dry_run "$(t pos_saved "$config_file")"
+    else
+        cfg::_persist "$config_file" RECEIVER_LAT "$RECEIVER_LAT"
+        cfg::_persist "$config_file" RECEIVER_LON "$RECEIVER_LON"
+        log::success "$(t pos_saved "$config_file")"
+    fi
+}
+
+# Coordinates end up on the readsb command line in /etc/default/readsb. A value
+# pasted with a comma ("23,58") would parse as the range of latitude 23 and
+# leave the rest for systemctl to trip over.
+cfg::validate_position() {
+    local lat="$1" lon="$2"
+
+    if [[ ! "$lat" =~ ^-?[0-9]+(\.[0-9]+)?$ ]] ||
+        ! awk -v n="$lat" 'BEGIN { exit !(n >= -90 && n <= 90) }'; then
+        util::die "$(t pos_invalid "$lat" "$lon")"
+    fi
+
+    if [[ ! "$lon" =~ ^-?[0-9]+(\.[0-9]+)?$ ]] ||
+        ! awk -v n="$lon" 'BEGIN { exit !(n >= -180 && n <= 180) }'; then
+        util::die "$(t pos_invalid "$lat" "$lon")"
+    fi
 }
 
 # Feeding a public network is opt-in and asked explicitly, because it publishes
@@ -417,9 +441,18 @@ cfg::require_feeder() {
 
 cfg::_persist() {
     local file="$1" key="$2" value="$3"
+    # sed replacement semantics: & expands to the match, | is our delimiter.
+    local esc="${value//\\/\\\\}"
+    esc="${esc//&/\\&}"
+    esc="${esc//|/\\|}"
+
+    if [[ "$DRY_RUN" == true ]]; then
+        log::dry_run "sed -i 's|^$key=.*|$key=\"$esc\"|' $file"
+        return 0
+    fi
 
     if grep -qE "^${key}=" "$file"; then
-        sed -i "s|^${key}=.*|${key}=\"${value}\"|" "$file"
+        sed -i "s|^${key}=.*|${key}=\"${esc}\"|" "$file"
     else
         printf '%s="%s"\n' "$key" "$value" >>"$file"
     fi

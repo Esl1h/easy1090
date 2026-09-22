@@ -133,28 +133,40 @@ feed::set_enabled() {
     log::step "$(t feed_step_cfg)"
 
     if [[ "$current" == "$wanted" ]]; then
-        [[ "$wanted" == true ]] && log::skip "$(t feed_already_on)" || log::skip "$(t feed_already_off)"
+        if [[ "$wanted" == true ]]; then
+            log::skip "$(t feed_already_on)"
+        else
+            log::skip "$(t feed_already_off)"
+        fi
     else
         if [[ "$FEED_NETWORK" == "airplaneslive" ]]; then
-            [[ "$wanted" == true ]] && log::warn "$(t feed_alive_enabling)" || log::info "$(t feed_alive_disabling)"
+            if [[ "$wanted" == true ]]; then
+                log::warn "$(t feed_alive_enabling)"
+            else
+                log::info "$(t feed_alive_disabling)"
+            fi
             FEEDER_AIRPLANESLIVE="$wanted"
         else
-            [[ "$wanted" == true ]] && log::warn "$(t feed_enabling)" || log::info "$(t feed_disabling)"
+            if [[ "$wanted" == true ]]; then
+                log::warn "$(t feed_enabling)"
+            else
+                log::info "$(t feed_disabling)"
+            fi
             FEEDER_ADSBEXCHANGE="$wanted"
         fi
-        [[ "$DRY_RUN" == true ]] || cfg::_persist "$CONFIG_FILE" "$key" "$wanted"
-        cfg::_persist_dry "$key" "$wanted"
+        cfg::_persist "$CONFIG_FILE" "$key" "$wanted"
     fi
 
-    # Rewrites /etc/default/readsb and restarts only if the content changed.
-    readsb::configure
-    readsb::enable
-}
-
-# Keeps the dry-run honest about the config file it would touch.
-cfg::_persist_dry() {
-    [[ "$DRY_RUN" == true ]] || return 0
-    log::dry_run "sed -i 's|^$1=.*|$1=\"$2\"|' $CONFIG_FILE"
+    # The connector only exists when readsb is installed. Without this guard a
+    # feed on a fresh machine writes /etc/default/readsb with an empty
+    # --lat/--lon and then systemctl enable fails on the missing unit.
+    if pkg::is_installed "$READSB_PACKAGE"; then
+        # Rewrites /etc/default/readsb and restarts only if the content changed.
+        readsb::configure
+        readsb::enable
+    else
+        log::warn "$(t feed_readsb_missing)"
+    fi
 }
 
 #===============================================================================

@@ -35,6 +35,7 @@ MSG[pos_required]="Latitude e longitude são obrigatórias."
 MSG[pos_required_yes]="RECEIVER_LAT/RECEIVER_LON são obrigatórios com --yes. Preencha %s."
 MSG[pos_dry]="RECEIVER_LAT/RECEIVER_LON vazios; usaria valores informados na execução real."
 MSG[pos_saved]="Posição gravada em %s"
+MSG[pos_invalid]="Coordenadas inválidas: %s, %s. Use graus decimais com ponto, latitude entre -90 e 90, longitude entre -180 e 180."
 
 #-------------------------------------------------------------------------------
 # Compartilhamento de dados
@@ -378,6 +379,7 @@ MSG[feed_already_on]="Feed já está habilitado na config."
 MSG[feed_already_off]="Feed já está desabilitado."
 MSG[feed_connected]="Conectado a %s"
 MSG[feed_not_connected]="Sem conexão estabelecida com o ADSBExchange no momento."
+MSG[feed_readsb_missing]="readsb ainda não está instalado; a escolha foi registrada no install.conf, mas o /etc/default/readsb não foi reescrito. Rode easy1090 install primeiro."
 MSG[feed_stats_present]="Serviço adsbexchange-stats já instalado e habilitado."
 MSG[feed_stats_intro]="O pacote de estatísticas é código de terceiro, do ADSBExchange, e o instalador dele roda como root:"
 MSG[feed_stats_repo]="  %s"
