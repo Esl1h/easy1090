@@ -13,6 +13,14 @@ ADS-B guides almost always assume Raspberry Pi OS or Debian: the official script
 
 What you end up with: the correct driver for the RTL-SDR Blog V4, `readsb` decoding ADS-B at 1090 MHz, and a live web map, all with permissions, `udev` rules and `systemd` services in place, surviving reboots.
 
+The stack, seen from the machine itself: `viewadsb` with callsign and RSSI, and the SBS CSV stream straight out of port 30003 (TAM, Aerolíneas Argentinas and Lufthansa passing over the region that day):
+
+![Three terminals: viewadsb listing aircraft, a live summary view and the raw SBS stream via nc on port 30003](docs/assets/img/terminal-viewadsb-nc.webp)
+
+The reward, on the map: the tooltip alone answers "what plane is that?", a South African Airways A330 climbing through 9,250 feet, with registration, route, altitude and speed:
+
+![tar1090 tooltip for flight SAA227, an Airbus A330, with registration, altitude and speed](docs/assets/img/tar1090-voo.webp)
+
 ## Requirements
 
 - Arch Linux or a derivative (EndeavourOS, Omarchy, Manjaro, CachyOS)
