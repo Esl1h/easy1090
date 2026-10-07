@@ -1,0 +1,9 @@
+[package]
+name = "easy1090"
+version = "0.1.0"
+edition = "2021"
+description = "ADS-B stack in one command (Arch and derivatives), Rust port"
+license = "MIT"
+build = "build.rs"
+
+[dependencies]

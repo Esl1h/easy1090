@@ -1,0 +1,36 @@
+name: Rust
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'rust/**'
+  pull_request:
+    paths:
+      - 'rust/**'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  rust:
+    name: Format, lint and test
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: rust
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Install rustfmt and clippy
+        run: rustup component add rustfmt clippy
+
+      - name: Format check
+        run: cargo fmt -- --check
+
+      - name: Clippy (warnings denied)
+        run: cargo clippy --all-targets -- -D warnings
+
+      - name: Tests
+        run: cargo test
