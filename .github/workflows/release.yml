@@ -35,7 +35,7 @@ jobs:
         run: make release
 
       # gh is preinstalled on the runner; the job permission above lets it
-      # create the release for the pushed tag and upload the five dist files.
+      # create the release for the pushed tag and upload the six dist files.
       # An -rc tag publishes as a pre-release so the Rust port never takes
       # the "Latest" slot before the phase 7 cutover.
       - name: Publish on the GitHub Release
