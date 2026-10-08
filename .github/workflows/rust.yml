@@ -5,9 +5,11 @@ on:
     branches: [main]
     paths:
       - 'rust/**'
+      - 'lib/i18n/**'
   pull_request:
     paths:
       - 'rust/**'
+      - 'lib/i18n/**'
   workflow_dispatch:
 
 permissions:
@@ -34,3 +36,9 @@ jobs:
 
       - name: Tests
         run: cargo test
+
+      # The Rust catalogs are committed copies of lib/i18n/*.sh; a missing key
+      # would not crash (t() falls back to the key itself), so the key sets
+      # are compared here and any divergence fails the job.
+      - name: i18n parity gate (bash vs rust catalogs)
+        run: scripts/i18n-parity.sh
