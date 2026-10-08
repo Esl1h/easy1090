@@ -41,7 +41,8 @@ fn act(action: &str, args: &[&str]) {
         }
 
         log::info(&t!("svc_acting", unit, action));
-        run::sudo(["systemctl", action, unit]);
+        // The bash guards this with `|| true`: the action runs best effort.
+        run::sudo_ok(["systemctl", action, unit]);
     }
 
     log::success(&t!("svc_done"));

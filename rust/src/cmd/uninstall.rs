@@ -104,7 +104,7 @@ fn stop_service(unit: &str) {
     }
 
     log::info(&t!("un_stopping", unit));
-    run::sudo(["systemctl", "disable", "--now", unit]);
+    run::sudo_ok(["systemctl", "disable", "--now", unit]);
 }
 
 fn remove_package(backend: &dyn Backend, package: &str, keep_packages: bool) {
@@ -123,7 +123,7 @@ fn uninstall_tar1090() {
 
     if Path::new(TAR1090_UNINSTALL).is_file() {
         log::info(&t!("un_upstream", TAR1090_UNINSTALL));
-        run::sudo(["bash", TAR1090_UNINSTALL]);
+        run::sudo_ok(["bash", TAR1090_UNINSTALL]);
     } else {
         log::warn(&t!("un_upstream_missing"));
         stop_service("tar1090");
@@ -165,7 +165,7 @@ fn lighttpd_include() {
 
     if svc::is_active("lighttpd") {
         log::info(&t!("un_lighttpd_restart"));
-        run::sudo(["systemctl", "restart", "lighttpd"]);
+        run::sudo_ok(["systemctl", "restart", "lighttpd"]);
     }
 }
 
@@ -177,8 +177,8 @@ fn uninstall_readsb(backend: &dyn Backend, keep_packages: bool) {
     rm_path(READSB_DEFAULTS);
     rm_path(READSB_UDEV_RULE);
 
-    // The dry-run previews the command; a real run ignores a failure.
-    run::sudo(["udevadm", "control", "--reload-rules"]);
+    // The bash guards this with `|| true`: best effort.
+    run::sudo_ok(["udevadm", "control", "--reload-rules"]);
 }
 
 fn uninstall_driver(backend: &dyn Backend, keep_packages: bool) {

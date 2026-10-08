@@ -156,14 +156,13 @@ fn fix_lighttpd_include(needs_restart: &mut bool) {
     } else {
         // printf 'include_shell "cat %s/*.conf"\n' | sudo tee -a >/dev/null
         let line = format!("include_shell \"cat {LIGHTTPD_CONF_ENABLED}/*.conf\"\n");
-        let ok = run::sudo_write_append(LIGHTTPD_CONF, &line);
-        if !ok {
-            std::process::exit(1);
-        }
+        run::sudo_write_append(LIGHTTPD_CONF, &line);
     }
 
     log::info(&t!("tar_lighttpd_check"));
-    if !run::sudo(["lighttpd", "-tt", "-f", LIGHTTPD_CONF]) {
+    // The bash guards this with `|| util::die`: the run continues when the
+    // check fails, so the caller gets to print the message.
+    if !run::sudo_ok(["lighttpd", "-tt", "-f", LIGHTTPD_CONF]) {
         util::die(&t!("tar_lighttpd_invalid", LIGHTTPD_CONF));
     }
 }

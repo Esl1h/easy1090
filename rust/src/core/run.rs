@@ -104,26 +104,65 @@ fn ansi_c_quote(arg: &str) -> String {
 /// being buffered. Under `--dry-run` it previews the command instead and
 /// reports success, so the whole flow can be walked without executing
 /// anything.
+///
+/// A nonzero exit aborts the run, like a bare command under `set -e` in
+/// the bash: nothing extra is printed (the failed command's own stderr has
+/// already streamed), the exit code is preserved, and the sudo keepalive
+/// is cleaned up on the way out, like the bash EXIT trap. Call sites the
+/// bash guards with `||` use cmd_ok and sudo_ok instead, where a failure
+/// is just a false return.
 pub fn cmd<I, S>(args: I) -> bool
 where
     I: IntoIterator<Item = S>,
     S: Into<OsString>,
 {
-    cmd_in_impl(None, args)
+    abort_on_failure(cmd_in_impl(None, args))
 }
 
 /// `run::cmd` from inside a directory, the `( cd dir && cmd )` subshell of
 /// the bash. The preview shows the command alone, exactly like the bash
-/// renders `run::cmd` inside the subshell.
+/// renders `run::cmd` inside the subshell. Same abort-on-failure contract
+/// as cmd: the subshell under `set -e` takes the parent with it.
 pub fn cmd_in<I, S>(dir: impl AsRef<OsStr>, args: I) -> bool
 where
     I: IntoIterator<Item = S>,
     S: Into<OsString>,
 {
-    cmd_in_impl(Some(dir.as_ref()), args)
+    abort_on_failure(cmd_in_impl(Some(dir.as_ref()), args))
 }
 
-fn cmd_in_impl<I, S>(dir: Option<&OsStr>, args: I) -> bool
+/// `run::cmd` for the call sites the bash guards with `||`: a failure is
+/// reported as false, the run continues.
+pub fn cmd_ok<I, S>(args: I) -> bool
+where
+    I: IntoIterator<Item = S>,
+    S: Into<OsString>,
+{
+    cmd_in_impl(None, args) == 0
+}
+
+/// `run::sudo` for the `||`-guarded call sites, same non-fatal contract.
+pub fn sudo_ok<I, S>(args: I) -> bool
+where
+    I: IntoIterator<Item = S>,
+    S: Into<OsString>,
+{
+    let mut argv: Vec<OsString> = vec![OsString::from("sudo")];
+    argv.extend(args.into_iter().map(Into::into));
+    cmd_ok(argv)
+}
+
+/// The set -e half of the contract: exit with the failed command's own
+/// status code, after the keepalive cleanup the bash EXIT trap does.
+fn abort_on_failure(code: i32) -> bool {
+    if code != 0 {
+        crate::core::sudo::cleanup();
+        std::process::exit(code);
+    }
+    true
+}
+
+fn cmd_in_impl<I, S>(dir: Option<&OsStr>, args: I) -> i32
 where
     I: IntoIterator<Item = S>,
     S: Into<OsString>,
@@ -133,28 +172,34 @@ where
 
     if dry_run() {
         log::dry_run(&rendered);
-        return true;
+        return 0;
     }
 
     log::debug(&format!("exec: {rendered}"));
     let Some((program, rest)) = argv.split_first() else {
-        return true;
+        return 0;
     };
     let mut command = Command::new(program);
     command.args(rest);
     if let Some(dir) = dir {
         command.current_dir(dir);
     }
-    command
+    match command
         .stdin(Stdio::inherit())
         .stdout(Stdio::inherit())
         .stderr(Stdio::inherit())
         .status()
-        .map(|status| status.success())
-        .unwrap_or(false)
+    {
+        Ok(status) => status.code().unwrap_or(1),
+        Err(error) => {
+            eprintln!("{error}");
+            1
+        }
+    }
 }
 
-/// `run::sudo`: the same execution path with `sudo` in front.
+/// `run::sudo`: the same execution path with `sudo` in front. Same
+/// abort-on-failure contract as cmd.
 pub fn sudo<I, S>(args: I) -> bool
 where
     I: IntoIterator<Item = S>,
@@ -166,7 +211,8 @@ where
 }
 
 /// `run::sudo` from inside a directory, the `( cd dir && sudo cmd )` shape
-/// feed::stats_run uses for the third party installer.
+/// feed::stats_run uses for the third party installer. Non-fatal by
+/// contract: the bash guards that call with `|| { ...; return 1; }`.
 pub fn sudo_in<I, S>(dir: impl AsRef<OsStr>, args: I) -> bool
 where
     I: IntoIterator<Item = S>,
@@ -174,7 +220,7 @@ where
 {
     let mut argv: Vec<OsString> = vec![OsString::from("sudo")];
     argv.extend(args.into_iter().map(Into::into));
-    cmd_in(dir, argv)
+    cmd_in_impl(Some(dir.as_ref()), argv) == 0
 }
 
 /// `run::sudo` with stderr silenced and the failure ignored, the
@@ -259,13 +305,24 @@ pub fn sudo_write(path: &str, content: &str) -> bool {
             .and_then(|_| stdin.write_all(b"\n"))
             .and_then(|_| stdin.flush())
     });
-    let _ = child.wait();
+    // `printf ... | sudo tee` under set -e and pipefail: a failed tee
+    // aborts the run, silently, preserving the exit code.
+    match child.wait() {
+        Ok(status) if status.success() => {}
+        Ok(status) => {
+            abort_on_failure(status.code().unwrap_or(1));
+        }
+        Err(_) => {
+            abort_on_failure(1);
+        }
+    }
     true
 }
 
 /// Appends one line to a file as root, the `printf ... | sudo tee -a` shape
 /// tar1090::fix_lighttpd_include uses. No preview of its own: the bash
-/// composes the dry-run line by hand at the call site.
+/// composes the dry-run line by hand at the call site. The bash call site
+/// is a bare statement, so a failed tee aborts the run, like sudo_write.
 pub fn sudo_write_append(path: &str, line: &str) -> bool {
     let mut child = match Command::new("sudo")
         .arg("tee")
@@ -279,19 +336,29 @@ pub fn sudo_write_append(path: &str, line: &str) -> bool {
         Ok(child) => child,
         Err(error) => {
             eprintln!("{error}");
-            return false;
+            return abort_on_failure(1);
         }
     };
 
-    let mut written = true;
     if let Some(mut stdin) = child.stdin.take() {
-        written = stdin
+        if stdin
             .write_all(line.as_bytes())
             .and_then(|_| stdin.flush())
-            .is_ok();
+            .is_err()
+        {
+            return abort_on_failure(1);
+        }
     }
-    let status = child.wait().map(|status| status.success()).unwrap_or(false);
-    written && status
+    match child.wait() {
+        Ok(status) if status.success() => {}
+        Ok(status) => {
+            abort_on_failure(status.code().unwrap_or(1));
+        }
+        Err(_) => {
+            abort_on_failure(1);
+        }
+    }
+    true
 }
 
 /// Runs a command capturing stdout, the shape of the bash `$(cmd ...)`.

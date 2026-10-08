@@ -201,7 +201,7 @@ fn services(readsb_changed: bool) {
 
     for unit in units {
         log::info(&t!("upd_services_restart", unit));
-        run::sudo(["systemctl", "restart", unit]);
+        run::sudo_ok(["systemctl", "restart", unit]);
     }
 }
 

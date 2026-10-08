@@ -85,7 +85,9 @@ fn blacklist_dvb() {
 
     if loaded {
         log::info(&t!("drv_module_unload", DVB_MODULE));
-        if !run::sudo(["modprobe", "-r", DVB_MODULE]) {
+        // The bash guards this with `|| log::warn`: a failed unload is
+        // reported, not fatal.
+        if !run::sudo_ok(["modprobe", "-r", DVB_MODULE]) {
             log::warn(&t!("drv_module_unload_fail", DVB_MODULE));
         }
     } else {
