@@ -209,7 +209,24 @@ fn persist_impl(file: &Path, key: &str, value: &str, dry_run: bool) {
         // The append branch writes the raw value, not the sed-escaped one.
         out.push_str(&format!("{key}=\"{value}\"\n"));
     }
-    if let Err(error) = fs::write(file, out) {
+    // sed -i writes a temp file in the same directory and renames it over
+    // the target, so what matters is write permission on the directory, not
+    // on the (possibly root-owned) file. Writing in place with fs::write
+    // would need write permission on the file itself and fail where the
+    // bash succeeds: an install.conf created by root, or read-only, stays
+    // persistable as long as the directory is writable.
+    let mut temp_name = file.as_os_str().to_os_string();
+    temp_name.push(".easy1090.tmp");
+    let temp = std::path::PathBuf::from(temp_name);
+    let result = fs::metadata(file)
+        .map(|meta| meta.permissions())
+        .and_then(|permissions| {
+            fs::write(&temp, &out).and_then(|_| fs::set_permissions(&temp, permissions))
+        })
+        .or_else(|_| fs::write(&temp, &out))
+        .and_then(|_| fs::rename(&temp, file));
+    if let Err(error) = result {
+        let _ = fs::remove_file(&temp);
         crate::core::util::die(&error.to_string());
     }
 }
@@ -475,6 +492,28 @@ mod tests {
             fs::read_to_string(&path).unwrap(),
             "KEY=\"a\\\\b\\&c\\|d\"\n"
         );
+        fs::remove_file(&path).ok();
+    }
+
+    #[test]
+    fn persist_rewrites_a_read_only_file_like_sed_i() {
+        // sed -i swaps the file by rename, so writing depends on the
+        // directory, not on the file. A read-only install.conf (or one owned
+        // by root, same effect in a container) must stay persistable; the
+        // regression this test pins is fs::write in place, which fails with
+        // EACCES here while the bash succeeds.
+        use std::os::unix::fs::PermissionsExt;
+        let path = temp_path("readonly");
+        fs::write(&path, "UI_LANGUAGE=\"\"\nRECEIVER_LAT=\"1\"\n").unwrap();
+        fs::set_permissions(&path, fs::Permissions::from_mode(0o444)).unwrap();
+        persist_impl(&path, "UI_LANGUAGE", "pt", false);
+        assert!(fs::read_to_string(&path)
+            .unwrap()
+            .starts_with("UI_LANGUAGE=\"pt\"\n"));
+        // The sed -i semantics also preserve the mode bits.
+        let mode = fs::metadata(&path).unwrap().permissions().mode();
+        assert_eq!(mode & 0o777, 0o444);
+        fs::set_permissions(&path, fs::Permissions::from_mode(0o644)).unwrap();
         fs::remove_file(&path).ok();
     }
 
