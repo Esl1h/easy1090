@@ -9,6 +9,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 ### Added
 
 - airplanes.live as a second feed network. `easy1090 feed` now lists the networks and their state instead of assuming ADSBExchange, and takes the network as an argument: `easy1090 feed airplaneslive`. Both can be fed at once, since they are independent connectors on the same readsb.
+- A second implementation in Rust, under `rust/`: same commands, messages and behavior as the shell version, built as a static musl binary for amd64 and arm64. Each release publishes an archive per architecture (the binary plus `install.conf.example` and `vendor/`) next to the shell tarball, with a `SHA256SUMS`. It ships as a release candidate (`-rc` pre-release tags) and the shell version stays the reference.
 
 ## [0.2.0] - 2026-08-11
 
