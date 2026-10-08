@@ -10,7 +10,13 @@ use crate::t;
 /// Asks for confirmation. The bash prints the prompt with `read -p`, which
 /// writes to stderr, so this does too.
 pub fn confirm(prompt: &str) -> bool {
-    if run::assume_yes() || run::dry_run() {
+    confirm_impl(prompt, run::assume_yes(), run::dry_run())
+}
+
+// The flags are parameters so the test does not flip the process-wide
+// globals, which would race with every other test running in parallel.
+fn confirm_impl(prompt: &str, assume_yes: bool, dry_run: bool) -> bool {
+    if assume_yes || dry_run {
         return true;
     }
     eprint!("{}{}{} {}", log::bold(), prompt, log::reset(), t!("yes_no"));
@@ -60,11 +66,7 @@ mod tests {
 
     #[test]
     fn assume_yes_and_dry_run_shortcut_the_prompt() {
-        run::set_assume_yes(true);
-        assert!(confirm("anything"));
-        run::set_assume_yes(false);
-        run::set_dry_run(true);
-        assert!(confirm("anything"));
-        run::set_dry_run(false);
+        assert!(confirm_impl("anything", true, false));
+        assert!(confirm_impl("anything", false, true));
     }
 }

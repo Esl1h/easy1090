@@ -14,7 +14,13 @@ static KEEPALIVE: Mutex<Option<std::process::Child>> = Mutex::new(None);
 /// Validates sudo with `sudo -v` and starts the keepalive loop. Under
 /// `--dry-run` it does nothing, like the bash.
 pub fn init() {
-    if run::dry_run() {
+    init_impl(run::dry_run());
+}
+
+// Takes the flag as a parameter so the test does not flip the process-wide
+// DRY_RUN, which would race with every other test running in parallel.
+fn init_impl(dry_run: bool) {
+    if dry_run {
         return;
     }
 
@@ -74,13 +80,10 @@ mod tests {
 
     #[test]
     fn dry_run_skips_validation_and_keepalive() {
-        run::set_dry_run(true);
-        init();
+        init_impl(true);
         assert!(
             !keepalive_running(),
             "the bash sudo::init returns immediately under --dry-run"
         );
-        run::set_dry_run(false);
-        cleanup();
     }
 }

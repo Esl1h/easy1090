@@ -244,6 +244,12 @@ fn sed_preview(file: &Path, key: &str, escaped: &str) -> String {
 /// skipped and the position read as 0.0, which is what the bash does so the
 /// preview can walk the readsb config step.
 pub fn require_position(config_file: &Path, config: &mut Config) {
+    require_position_impl(config_file, config, run::dry_run());
+}
+
+// The dry-run flag is a parameter so the test does not flip the process-wide
+// DRY_RUN, which would race with every other test running in parallel.
+fn require_position_impl(config_file: &Path, config: &mut Config, dry_run: bool) {
     let lat = config.get("RECEIVER_LAT").unwrap_or("").to_string();
     let lon = config.get("RECEIVER_LON").unwrap_or("").to_string();
 
@@ -253,7 +259,7 @@ pub fn require_position(config_file: &Path, config: &mut Config) {
         return;
     }
 
-    if run::dry_run() {
+    if dry_run {
         log::warn(&t!("pos_dry"));
         config.set("RECEIVER_LAT", "0.0");
         config.set("RECEIVER_LON", "0.0");
@@ -612,15 +618,13 @@ mod tests {
 
     #[test]
     fn require_position_dry_run_reads_zero_without_prompting() {
-        run::set_dry_run(true);
         let config_file = PathBuf::from("/tmp/easy1090-cfg-test-dry/install.conf");
         let mut config = Config::default();
         apply_defaults(&mut config);
 
-        require_position(&config_file, &mut config);
+        require_position_impl(&config_file, &mut config, true);
 
         assert_eq!(config.get("RECEIVER_LAT"), Some("0.0"));
         assert_eq!(config.get("RECEIVER_LON"), Some("0.0"));
-        run::set_dry_run(false);
     }
 }
