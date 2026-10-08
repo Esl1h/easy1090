@@ -1,13 +1,10 @@
-//! easy1090 (Rust port), phase 2: core foundation.
+//! easy1090 (Rust port), phase 3: read-only commands.
 //!
-//! The binary answers --version and -h/--help (text from MSG[main_usage] in
-//! the selected language) and errors for everything else, with the messages
-//! coming from the same catalog. --lang selects the catalog; the remaining
-//! global flags set their state but have no commands to act on yet.
-//! Subcommands arrive in later phases.
+//! `status` and `open` are ported from lib/cmd-status.sh and lib/cmd-open.sh;
+//! every other subcommand still reports "not implemented yet". --version and
+//! -h/--help keep working from phase 1.
 
-// Public so the core modules stay reachable even before every piece is wired
-// into a subcommand; phases 3+ consume them from here.
+pub mod cmd;
 pub mod core;
 
 use std::process::ExitCode;
@@ -15,12 +12,13 @@ use std::process::ExitCode;
 use core::{i18n, log, run};
 
 /// Set by build.rs (`cargo:rustc-env`); falls back to "unknown" if unset.
-const VERSION: &str = match option_env!("EASY1090_VERSION") {
+pub(crate) const VERSION: &str = match option_env!("EASY1090_VERSION") {
     Some(version) => version,
     None => "unknown",
 };
 
-/// Commands the bash entrypoint dispatches to. Not implemented yet.
+/// Commands the bash entrypoint dispatches to. The ones without a port yet
+/// report "not implemented".
 const KNOWN_COMMANDS: &[&str] = &[
     "install",
     "update",
@@ -52,9 +50,11 @@ fn main() -> ExitCode {
     }
 
     // Global flags, parsed like the bash parse_global: --lang takes the next
-    // argument as its value (whatever it is), the rest set state. Without
-    // subcommands yet, only the language has an observable effect.
+    // argument as its value (whatever it is), the rest set state. Everything
+    // that is not a recognized global flag is handed to the subcommand; -h
+    // and --help only mean "help" before a command has been seen.
     let mut command: Option<&str> = None;
+    let mut command_args: Vec<&str> = Vec::new();
     let mut help_wanted = false;
     let mut cli_lang: Option<&str> = None;
     let mut iter = args.iter().peekable();
@@ -67,12 +67,16 @@ fn main() -> ExitCode {
             "-h" | "--help" => {
                 if command.is_none() {
                     help_wanted = true;
+                } else {
+                    command_args.push(arg.as_str());
                 }
             }
-            _ if arg.starts_with('-') => {}
+            _ if arg.starts_with('-') => command_args.push(arg.as_str()),
             _ => {
                 if command.is_none() {
                     command = Some(arg.as_str());
+                } else {
+                    command_args.push(arg.as_str());
                 }
             }
         }
@@ -85,21 +89,30 @@ fn main() -> ExitCode {
         return ExitCode::SUCCESS;
     }
 
-    match command {
+    let code = match command {
         None => {
             // Unknown options land in the command args in the bash too, so a
             // bare --flag ends here, not in a cli_unknown_opt error.
             log::error(&i18n::t("cmd_missing", &[]));
             print_help();
+            1
         }
+        Some("status") => cmd::status::run(),
+        Some("open") => cmd::open::run(&command_args),
         Some(cmd) if KNOWN_COMMANDS.contains(&cmd) => {
             log::error(&format!("\"{cmd}\" is not implemented yet."));
+            1
         }
         Some(cmd) => {
             log::error(&i18n::t("cmd_unknown", &[&cmd]));
             print_help();
+            1
         }
-    }
+    };
 
-    ExitCode::FAILURE
+    if code == 0 {
+        ExitCode::SUCCESS
+    } else {
+        ExitCode::from(code.clamp(0, 255) as u8)
+    }
 }

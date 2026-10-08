@@ -53,13 +53,29 @@ pub fn bold() -> &'static str {
     }
 }
 
-/// The reset sequence after a bold prompt; empty when not a tty.
+/// The reset sequence after a colored or bold span; empty when not a tty.
 pub fn reset() -> &'static str {
     if colors_on() {
         RESET
     } else {
         ""
     }
+}
+
+/// The GREEN sequence for `status` rows; empty when not a tty.
+pub fn green() -> &'static str {
+    color(GREEN)
+}
+
+/// The RED sequence for `status` rows; empty when not a tty.
+pub fn red() -> &'static str {
+    color(RED)
+}
+
+/// The YELLOW sequence for `status` rows with an unknown state; empty when
+/// not a tty.
+pub fn yellow() -> &'static str {
+    color(YELLOW)
 }
 
 /// `${color}[%-5s]${RESET} %s` with the level padded to five columns, as

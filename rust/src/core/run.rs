@@ -3,7 +3,8 @@
 //! (rendered like bash `printf '%q'`), never a description of it.
 
 use std::ffi::OsString;
-use std::process::Command;
+use std::os::unix::process::ExitStatusExt;
+use std::process::{Command, Output, Stdio};
 use std::sync::atomic::{AtomicBool, Ordering};
 
 use crate::core::log;
@@ -132,6 +133,55 @@ where
     let mut argv: Vec<OsString> = vec![OsString::from("sudo")];
     argv.extend(args.into_iter().map(Into::into));
     cmd(argv)
+}
+
+/// Runs a command capturing stdout, the shape of the bash `$(cmd ...)`.
+/// `stderr` carries the redirection of each call site: `Stdio::null()` where
+/// the bash writes `2>/dev/null`, `Stdio::inherit()` where it leaves stderr
+/// alone. `None` when the program cannot be spawned, the bash 127 case.
+pub fn capture<I, S>(args: I, stderr: Stdio) -> Option<Output>
+where
+    I: IntoIterator<Item = S>,
+    S: Into<OsString>,
+{
+    let argv: Vec<OsString> = args.into_iter().map(Into::into).collect();
+    let (program, rest) = argv.split_first()?;
+    Command::new(program)
+        .args(rest)
+        .stderr(stderr)
+        .output()
+        .ok()
+}
+
+/// Runs a command with inherited stdio and returns its exit status, for the
+/// call sites where the bash propagates the status (open::map's xdg-open).
+/// Under `--dry-run` it previews the command and reports success, like
+/// `run::cmd`.
+pub fn exit_code<I, S>(args: I) -> i32
+where
+    I: IntoIterator<Item = S>,
+    S: Into<OsString>,
+{
+    let argv: Vec<OsString> = args.into_iter().map(Into::into).collect();
+    let rendered = render(argv.iter().cloned());
+
+    if dry_run() {
+        log::dry_run(&rendered);
+        return 0;
+    }
+
+    log::debug(&format!("exec: {rendered}"));
+    let Some((program, rest)) = argv.split_first() else {
+        return 0;
+    };
+    match Command::new(program).args(rest).status() {
+        // A signal-terminated child reports 128 + signal, like the shell.
+        Ok(status) => status
+            .code()
+            .unwrap_or_else(|| 128 + status.signal().unwrap_or(0)),
+        // Spawn failure: the shell reports 127 for a command not found.
+        Err(_) => 127,
+    }
 }
 
 #[cfg(test)]
