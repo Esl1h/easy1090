@@ -23,3 +23,7 @@ Thumbs.db
 .vscode/
 .idea/
 .claude
+
+# Porte Rust
+rust/target/
+rust/dist/

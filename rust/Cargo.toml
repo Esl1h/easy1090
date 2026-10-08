@@ -1,0 +1,14 @@
+[package]
+name = "easy1090"
+version = "0.2.0"
+edition = "2021"
+description = "ADS-B stack in one command (Arch and derivatives), Rust port"
+license = "MIT"
+build = "build.rs"
+
+[dependencies]
+
+# Strip at link time, which is cross-arch safe: the linker does it, so no
+# external strip tool is needed for the aarch64 binary on an x86_64 host.
+[profile.release]
+strip = true

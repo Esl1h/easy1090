@@ -1,0 +1,51 @@
+name: Release
+
+# Tag-driven release: pushing a v* tag builds both static musl targets and
+# assembles every artifact with `make release` in rust/. The Makefile is the
+# only place that names files and reads the version from Cargo.toml.
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: read
+
+jobs:
+  release:
+    name: Build and publish artifacts
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write  # create the GitHub Release and upload the assets
+    steps:
+      - uses: actions/checkout@v7
+
+      # rustc ships a self-contained musl libc and CRT for both musl targets,
+      # and the crate has no C dependencies, so the aarch64 build only needs
+      # rust-lld, which rustup ships too. No external cross toolchain is
+      # downloaded: musl.cc went dark from the runners before, and `cross`
+      # would cost Docker image pulls. Stripping is cross-arch safe as well:
+      # [profile.release] strip = true makes the linker strip both binaries.
+      - name: Install the musl targets
+        run: rustup target add x86_64-unknown-linux-musl aarch64-unknown-linux-musl
+
+      - name: Build and package
+        working-directory: rust
+        env:
+          CARGO_TARGET_AARCH64_UNKNOWN_LINUX_MUSL_LINKER: rust-lld
+        run: make release
+
+      # gh is preinstalled on the runner; the job permission above lets it
+      # create the release for the pushed tag and upload the six dist files.
+      # An -rc tag publishes as a pre-release so the Rust port never takes
+      # the "Latest" slot before the phase 7 cutover.
+      - name: Publish on the GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          case "$GITHUB_REF_NAME" in
+            *-rc*) set -- --prerelease ;;
+            *) set -- ;;
+          esac
+          gh release create "$GITHUB_REF_NAME" \
+            rust/dist/easy1090-* rust/dist/SHA256SUMS \
+            "$@" --verify-tag --generate-notes --title "$GITHUB_REF_NAME"

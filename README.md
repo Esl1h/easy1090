@@ -38,6 +38,26 @@ cd easy1090
 
 `./install.sh` still works as a shortcut for `./easy1090 install`.
 
+### The Rust port (release candidate)
+
+There is a second implementation of the same installer in Rust, under [`rust/`](rust/README.md): same commands, same messages, same behavior, verified by comparing its output against the shell version. Every release publishes it as a static musl binary in an archive, so the tree clone above is replaced by a download:
+
+```bash
+curl -fsSLO \
+  https://github.com/Esl1h/easy1090/releases/download/v0.2.0-rust.2-rc/easy1090-0.2.0-linux-amd64.tar.gz
+mkdir easy1090 && tar -xzf easy1090-0.2.0-linux-amd64.tar.gz -C easy1090
+cd easy1090
+./easy1090 install
+```
+
+Run it as your normal user, like the shell version: it asks for `sudo` when a step needs it, and refuses to start as root. Run it from the extracted directory, because the binary looks for `install.conf`, `install.conf.example` and `vendor/` in the current directory, the way the shell version looks next to the script. The archive carries the pinned tar1090 installer from `vendor/`, which is why the bare `.bin` also published on the release cannot complete an install on its own.
+
+There is an `arm64` archive alongside it for Raspberry Pi and friends, and a `SHA256SUMS` to check. Being statically linked, the binary runs on any Arch derivative regardless of its glibc age.
+
+Two honest caveats: it is a release candidate, not the battle-tested default yet, and the install is download-and-run, deliberately not `curl | sudo bash`, because `sudo` needs a real tty for the password and the first run is interactive (language, antenna position, feeding).
+
+Until the port graduates, the shell version in this tree is the reference implementation.
+
 Before running anything as root on your machine, see what it would do:
 
 ```bash
@@ -191,6 +211,7 @@ easy1090/
 │   ├── 30-tar1090.sh       web map and the Arch lighttpd fixes
 │   ├── 40-optional.sh      SDR++ and SatDump
 │   └── 60-validate.sh      end to end validation
+├── rust/                    the Rust port (see rust/README.md)
 └── vendor/
     ├── tar1090-install.sh  official installer, pinned by checksum (GPL v2+)
     ├── LICENSE.tar1090     upstream license text
@@ -214,6 +235,8 @@ Bug reports from real installations are the most useful contribution, because th
 ## Status
 
 Current release: [v0.2.0](https://github.com/Esl1h/easy1090/releases/tag/v0.2.0), tested end to end on a clean Omarchy (Arch) machine with an RTL-SDR Blog V4, and on an EndeavourOS server that had been built by hand.
+
+The Rust port is at [v0.2.0-rust.2-rc](https://github.com/Esl1h/easy1090/releases/tag/v0.2.0-rust.2-rc): full command parity with the shell version, verified output-for-output, but not yet exercised end to end on real hardware the way the shell release was.
 
 Changes are tracked in [CHANGELOG.md](CHANGELOG.md). The frictions found along the way, with their causes and the reasoning behind each workaround, are in [KNOWN_ISSUES.md](KNOWN_ISSUES.md), which is worth reading before opening an issue.
 
