@@ -7,3 +7,8 @@ license = "MIT"
 build = "build.rs"
 
 [dependencies]
+
+# Strip at link time, which is cross-arch safe: the linker does it, so no
+# external strip tool is needed for the aarch64 binary on an x86_64 host.
+[profile.release]
+strip = true

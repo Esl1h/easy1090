@@ -20,25 +20,18 @@ jobs:
       - uses: actions/checkout@v7
 
       # rustc ships a self-contained musl libc and CRT for both musl targets,
-      # so the aarch64 build only needs a linker driver, not a full cross
-      # toolchain. The prebuilt musl.cc toolchain is the smallest reliable
-      # source for one on ubuntu-latest: no Docker image pulls and no `cargo
-      # install` (what `cross` would cost). It also solves stripping, since
-      # GNU strip on the host understands the native ELF arch only; the
-      # toolchain ships aarch64-linux-musl-strip for the arm64 binary.
-      - name: Install the musl targets and the aarch64 linker
-        run: |
-          rustup target add x86_64-unknown-linux-musl aarch64-unknown-linux-musl
-          curl -fsSL -o "$RUNNER_TEMP/aarch64-linux-musl-cross.tgz" \
-            https://musl.cc/aarch64-linux-musl-cross.tgz
-          tar -xzf "$RUNNER_TEMP/aarch64-linux-musl-cross.tgz" -C "$HOME"
-          echo "$HOME/aarch64-linux-musl-cross/bin" >> "$GITHUB_PATH"
+      # and the crate has no C dependencies, so the aarch64 build only needs
+      # rust-lld, which rustup ships too. No external cross toolchain is
+      # downloaded: musl.cc went dark from the runners before, and `cross`
+      # would cost Docker image pulls. Stripping is cross-arch safe as well:
+      # [profile.release] strip = true makes the linker strip both binaries.
+      - name: Install the musl targets
+        run: rustup target add x86_64-unknown-linux-musl aarch64-unknown-linux-musl
 
       - name: Build and package
         working-directory: rust
         env:
-          CARGO_TARGET_AARCH64_UNKNOWN_LINUX_MUSL_LINKER: aarch64-linux-musl-gcc
-          STRIP_ARM64: aarch64-linux-musl-strip
+          CARGO_TARGET_AARCH64_UNKNOWN_LINUX_MUSL_LINKER: rust-lld
         run: make release
 
       # gh is preinstalled on the runner; the job permission above lets it

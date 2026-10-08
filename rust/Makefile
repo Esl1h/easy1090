@@ -1,13 +1,12 @@
 # Rust port. All targets run from this directory (never the repo root).
 
 CARGO ?= cargo
-# GNU strip only understands the native ELF arch on several distros, so the
-# arm64 strip is a separate knob. The tag workflow points it (and the aarch64
-# linker) at the musl.cc toolchain; locally, with that toolchain unpacked:
-#   CARGO_TARGET_AARCH64_UNKNOWN_LINUX_MUSL_LINKER=aarch64-linux-musl-gcc \
-#   STRIP_ARM64=aarch64-linux-musl-strip make release
-STRIP_AMD64 ?= strip
-STRIP_ARM64 ?= strip
+# Stripping happens in-profile ([profile.release] strip = true in
+# Cargo.toml), which is cross-arch safe: the linker strips, so no external
+# strip tool is needed for the aarch64 binary on an x86_64 host. For the
+# aarch64 link itself, rust-lld (shipped by rustup) is enough, since the
+# crate has no C dependencies:
+#   CARGO_TARGET_AARCH64_UNKNOWN_LINUX_MUSL_LINKER=rust-lld make release
 
 # Release targets; the artifact names below are fixed by the delegation spec.
 # CI only calls `make release` and never names a file itself.
@@ -52,12 +51,10 @@ release: release-checksums
 release-amd64:
 	$(CARGO) build --release --target $(TARGET_AMD64)
 	install -Dm755 target/$(TARGET_AMD64)/release/easy1090 $(DIST)/$(BIN_AMD64)
-	$(STRIP_AMD64) $(DIST)/$(BIN_AMD64)
 
 release-arm64:
 	$(CARGO) build --release --target $(TARGET_ARM64)
 	install -Dm755 target/$(TARGET_ARM64)/release/easy1090 $(DIST)/$(BIN_ARM64)
-	$(STRIP_ARM64) $(DIST)/$(BIN_ARM64)
 
 # Binary + README + LICENSE, flat at the archive root so extracting gives a
 # runnable ./easy1090. The repo ships no shell completions to add here.
