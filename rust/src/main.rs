@@ -22,6 +22,14 @@ pub(crate) const VERSION: &str = match option_env!("EASY1090_VERSION") {
     None => "unknown",
 };
 
+/// The build commit, stamped by the same build.rs. Nothing prints it (the
+/// bash has no equivalent), but the reference in main() keeps the value in
+/// the binary, so `strings` on a published build shows what was shipped.
+pub(crate) const BUILD_COMMIT: &str = match option_env!("EASY1090_BUILD_COMMIT") {
+    Some(commit) => commit,
+    None => "unknown",
+};
+
 /// The bash keeps install.conf next to the script (EASY1090_ROOT); the
 /// binary resolves its start directory the same way, so the config and the
 /// vendored installer are found next to it and every printed path is
@@ -68,6 +76,9 @@ fn uninstall_banner() {
 }
 
 fn main() -> ExitCode {
+    // Keeps BUILD_COMMIT in the binary; no output depends on it.
+    std::hint::black_box(BUILD_COMMIT);
+
     let args: Vec<String> = std::env::args().skip(1).collect();
 
     // The bash exits on --version anywhere in the argument list, before the

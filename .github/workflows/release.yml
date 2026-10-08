@@ -1,0 +1,58 @@
+name: Release
+
+# Tag-driven release: pushing a v* tag builds both static musl targets and
+# assembles every artifact with `make release` in rust/. The Makefile is the
+# only place that names files and reads the version from Cargo.toml.
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: read
+
+jobs:
+  release:
+    name: Build and publish artifacts
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write  # create the GitHub Release and upload the assets
+    steps:
+      - uses: actions/checkout@v7
+
+      # rustc ships a self-contained musl libc and CRT for both musl targets,
+      # so the aarch64 build only needs a linker driver, not a full cross
+      # toolchain. The prebuilt musl.cc toolchain is the smallest reliable
+      # source for one on ubuntu-latest: no Docker image pulls and no `cargo
+      # install` (what `cross` would cost). It also solves stripping, since
+      # GNU strip on the host understands the native ELF arch only; the
+      # toolchain ships aarch64-linux-musl-strip for the arm64 binary.
+      - name: Install the musl targets and the aarch64 linker
+        run: |
+          rustup target add x86_64-unknown-linux-musl aarch64-unknown-linux-musl
+          curl -fsSL -o "$RUNNER_TEMP/aarch64-linux-musl-cross.tgz" \
+            https://musl.cc/aarch64-linux-musl-cross.tgz
+          tar -xzf "$RUNNER_TEMP/aarch64-linux-musl-cross.tgz" -C "$HOME"
+          echo "$HOME/aarch64-linux-musl-cross/bin" >> "$GITHUB_PATH"
+
+      - name: Build and package
+        working-directory: rust
+        env:
+          CARGO_TARGET_AARCH64_UNKNOWN_LINUX_MUSL_LINKER: aarch64-linux-musl-gcc
+          STRIP_ARM64: aarch64-linux-musl-strip
+        run: make release
+
+      # gh is preinstalled on the runner; the job permission above lets it
+      # create the release for the pushed tag and upload the five dist files.
+      # An -rc tag publishes as a pre-release so the Rust port never takes
+      # the "Latest" slot before the phase 7 cutover.
+      - name: Publish on the GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          case "$GITHUB_REF_NAME" in
+            *-rc*) set -- --prerelease ;;
+            *) set -- ;;
+          esac
+          gh release create "$GITHUB_REF_NAME" \
+            rust/dist/easy1090-* rust/dist/SHA256SUMS \
+            "$@" --verify-tag --generate-notes --title "$GITHUB_REF_NAME"
