@@ -44,7 +44,7 @@ There is a second implementation of the same installer in Rust, under [`rust/`](
 
 ```bash
 curl -fsSLO \
-  https://github.com/Esl1h/easy1090/releases/download/v0.2.0-rust.1-rc/easy1090-0.2.0-linux-amd64.tar.gz
+  https://github.com/Esl1h/easy1090/releases/download/v0.2.0-rust.2-rc/easy1090-0.2.0-linux-amd64.tar.gz
 mkdir easy1090 && tar -xzf easy1090-0.2.0-linux-amd64.tar.gz -C easy1090
 cd easy1090
 ./easy1090 install
@@ -236,7 +236,7 @@ Bug reports from real installations are the most useful contribution, because th
 
 Current release: [v0.2.0](https://github.com/Esl1h/easy1090/releases/tag/v0.2.0), tested end to end on a clean Omarchy (Arch) machine with an RTL-SDR Blog V4, and on an EndeavourOS server that had been built by hand.
 
-The Rust port is at [v0.2.0-rust.1-rc](https://github.com/Esl1h/easy1090/releases/tag/v0.2.0-rust.1-rc): full command parity with the shell version, verified output-for-output, but not yet exercised end to end on real hardware the way the shell release was.
+The Rust port is at [v0.2.0-rust.2-rc](https://github.com/Esl1h/easy1090/releases/tag/v0.2.0-rust.2-rc): full command parity with the shell version, verified output-for-output, but not yet exercised end to end on real hardware the way the shell release was.
 
 Changes are tracked in [CHANGELOG.md](CHANGELOG.md). The frictions found along the way, with their causes and the reasoning behind each workaround, are in [KNOWN_ISSUES.md](KNOWN_ISSUES.md), which is worth reading before opening an issue.
 
