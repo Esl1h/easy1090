@@ -70,11 +70,13 @@ fn unknown_command_errors_with_usage() {
 
 #[test]
 fn unimplemented_command_errors() {
-    let out = bin().arg("install").output().unwrap();
+    // install has a phase 4 port now (banner + preflight); the rest still
+    // report the generic message.
+    let out = bin().arg("update").output().unwrap();
     assert!(!out.status.success());
     let stdout = String::from_utf8(out.stdout).unwrap();
     let stderr = String::from_utf8(out.stderr).unwrap();
-    assert!(stderr.contains("\"install\" is not implemented yet."));
+    assert!(stderr.contains("\"update\" is not implemented yet."));
     assert!(stdout.is_empty());
 }
 

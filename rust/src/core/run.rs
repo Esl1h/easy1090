@@ -97,9 +97,12 @@ fn ansi_c_quote(arg: &str) -> String {
     out
 }
 
-/// Runs a command with inherited stdio (the bash runs `"$@"` as-is). Under
-/// `--dry-run` it previews the command instead and reports success, so the
-/// whole flow can be walked without executing anything.
+/// Runs a command with inherited stdio (the bash runs `"$@"` as-is). The
+/// inherit is explicit on all three streams: `sudo` gets the caller's real
+/// tty for the password prompt, and stdout/stderr stream live instead of
+/// being buffered. Under `--dry-run` it previews the command instead and
+/// reports success, so the whole flow can be walked without executing
+/// anything.
 pub fn cmd<I, S>(args: I) -> bool
 where
     I: IntoIterator<Item = S>,
@@ -119,6 +122,9 @@ where
     };
     Command::new(program)
         .args(rest)
+        .stdin(Stdio::inherit())
+        .stdout(Stdio::inherit())
+        .stderr(Stdio::inherit())
         .status()
         .map(|status| status.success())
         .unwrap_or(false)
@@ -174,7 +180,13 @@ where
     let Some((program, rest)) = argv.split_first() else {
         return 0;
     };
-    match Command::new(program).args(rest).status() {
+    match Command::new(program)
+        .args(rest)
+        .stdin(Stdio::inherit())
+        .stdout(Stdio::inherit())
+        .stderr(Stdio::inherit())
+        .status()
+    {
         // A signal-terminated child reports 128 + signal, like the shell.
         Ok(status) => status
             .code()
@@ -210,5 +222,17 @@ mod tests {
         assert_eq!(render(["a|b"]), "a\\|b");
         assert_eq!(render(["café"]), "café");
         assert_eq!(render(["a\tb"]), "$'a\\tb'");
+    }
+
+    /// Manual proof of the sudo TTY story: run in a real terminal with
+    /// `cargo test sudo_inherited_stdio -- --ignored`. With cached sudo
+    /// credentials `sudo true` succeeds with no prompt, through the exact
+    /// inherited-stdio path run::sudo uses; without them the password
+    /// prompt appears on the terminal, which is the behavior being proven.
+    #[test]
+    #[ignore = "needs a real terminal and possibly a sudo password"]
+    fn sudo_inherited_stdio() {
+        set_dry_run(false);
+        assert!(sudo(["true"]), "sudo true failed");
     }
 }

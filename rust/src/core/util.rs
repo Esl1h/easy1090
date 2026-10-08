@@ -1,6 +1,7 @@
 //! Shared utilities from lib/common.sh: `util::die` and `util::have_cmd`.
 
 use std::env;
+use std::ffi::OsString;
 use std::fs;
 use std::os::unix::fs::PermissionsExt;
 use std::path::Path;
@@ -16,11 +17,17 @@ pub fn die(message: &str) -> ! {
 /// `util::have_cmd`: true when the name is an executable file found on PATH.
 /// A name containing a slash is checked at that path, like `command -v`.
 pub fn have_cmd(name: &str) -> bool {
+    have_cmd_in(name, env::var_os("PATH"))
+}
+
+/// The same check against an explicit search path; the preflight tests build
+/// fake tooling in a temp dir without touching the environment.
+pub fn have_cmd_in(name: &str, path: Option<OsString>) -> bool {
     if name.contains('/') {
         return executable(Path::new(name));
     }
 
-    match env::var_os("PATH") {
+    match path {
         Some(path) => env::split_paths(&path).any(|dir| executable(&dir.join(name))),
         // bash falls back to its compiled-in search path when PATH is unset.
         None => ["/usr/bin", "/bin"]

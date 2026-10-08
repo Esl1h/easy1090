@@ -1,5 +1,6 @@
 //! Subcommand ports, one module per lib/cmd-*.sh file.
 
+pub mod install;
 pub mod open;
 pub mod status;
 

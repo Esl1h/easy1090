@@ -21,6 +21,9 @@ pub fn init() {
     log::info(&t!("sudo_validating"));
     let ok = std::process::Command::new("sudo")
         .arg("-v")
+        .stdin(std::process::Stdio::inherit())
+        .stdout(std::process::Stdio::inherit())
+        .stderr(std::process::Stdio::inherit())
         .status()
         .map(|status| status.success())
         .unwrap_or(false);
@@ -54,5 +57,30 @@ pub fn cleanup() {
     {
         let _ = child.kill();
         let _ = child.wait();
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// Test-only view of the keepalive slot, to prove the dry-run skip.
+    fn keepalive_running() -> bool {
+        KEEPALIVE
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
+            .is_some()
+    }
+
+    #[test]
+    fn dry_run_skips_validation_and_keepalive() {
+        run::set_dry_run(true);
+        init();
+        assert!(
+            !keepalive_running(),
+            "the bash sudo::init returns immediately under --dry-run"
+        );
+        run::set_dry_run(false);
+        cleanup();
     }
 }

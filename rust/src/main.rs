@@ -1,11 +1,14 @@
-//! easy1090 (Rust port), phase 3: read-only commands.
+//! easy1090 (Rust port), phase 4: process layer and preflight.
 //!
 //! `status` and `open` are ported from lib/cmd-status.sh and lib/cmd-open.sh;
-//! every other subcommand still reports "not implemented yet". --version and
-//! -h/--help keep working from phase 1.
+//! `install` now runs its banner and the ported preflight and then stops with
+//! the not-implemented message for the installation steps. Every other
+//! subcommand still reports "not implemented yet". --version and -h/--help
+//! keep working from phase 1.
 
 pub mod cmd;
 pub mod core;
+pub mod preflight;
 
 use std::process::ExitCode;
 
@@ -99,6 +102,7 @@ fn main() -> ExitCode {
         }
         Some("status") => cmd::status::run(),
         Some("open") => cmd::open::run(&command_args),
+        Some("install") => cmd::install::run(&command_args),
         Some(cmd) if KNOWN_COMMANDS.contains(&cmd) => {
             log::error(&format!("\"{cmd}\" is not implemented yet."));
             1
