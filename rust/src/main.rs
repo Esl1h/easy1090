@@ -1,18 +1,20 @@
-//! easy1090 (Rust port), phase 4: process layer and preflight.
+//! easy1090 (Rust port), phase 5: the mutating commands.
 //!
-//! `status` and `open` are ported from lib/cmd-status.sh and lib/cmd-open.sh;
-//! `install` now runs its banner and the ported preflight and then stops with
-//! the not-implemented message for the installation steps. Every other
-//! subcommand still reports "not implemented yet". --version and -h/--help
-//! keep working from phase 1.
+//! `install`, `uninstall`, `start`, `stop`, `restart`, `update` and `feed`
+//! are now ported from lib/cmd-*.sh with the package layer behind the
+//! `pkg::Backend` trait. Every mutation goes through the run layer, so
+//! `--dry-run` previews the exact commands, and the state probes (pacman,
+//! systemctl, files) still run for real, exactly like the bash.
 
 pub mod cmd;
 pub mod core;
+pub mod pkg;
 pub mod preflight;
+pub mod steps;
 
 use std::process::ExitCode;
 
-use core::{i18n, log, run};
+use core::{i18n, log, run, util};
 
 /// Set by build.rs (`cargo:rustc-env`); falls back to "unknown" if unset.
 pub(crate) const VERSION: &str = match option_env!("EASY1090_VERSION") {
@@ -20,26 +22,49 @@ pub(crate) const VERSION: &str = match option_env!("EASY1090_VERSION") {
     None => "unknown",
 };
 
-/// Commands the bash entrypoint dispatches to. The ones without a port yet
-/// report "not implemented".
-const KNOWN_COMMANDS: &[&str] = &[
-    "install",
-    "update",
-    "feed",
-    "uninstall",
-    "status",
-    "start",
-    "stop",
-    "restart",
-    "open",
-];
-
 /// The bash keeps install.conf next to the script (EASY1090_ROOT); the
-/// binary looks next to its working directory until the layout is settled.
-const CONFIG_FILE: &str = "install.conf";
+/// binary resolves its start directory the same way, so the config and the
+/// vendored installer are found next to it and every printed path is
+/// absolute like the bash prints them.
+pub(crate) fn config_file() -> std::path::PathBuf {
+    util::root().join("install.conf")
+}
+
+pub(crate) fn config_example() -> std::path::PathBuf {
+    util::root().join("install.conf.example")
+}
 
 fn print_help() {
     print!("{}", i18n::t("main_usage", &[&VERSION]));
+}
+
+/// `banner` from the bash entrypoint: the version line and the --dry-run
+/// warning, both on stderr.
+fn banner() {
+    eprintln!(
+        "\n{}easy1090{} {}",
+        log::bold(),
+        log::reset(),
+        crate::VERSION
+    );
+    if run::dry_run() {
+        log::warn(&i18n::t("cli_dry_warning", &[]));
+    }
+}
+
+/// The uninstall arm of the bash entrypoint prints its own header line with
+/// the title appended, then the same dry-run warning.
+fn uninstall_banner() {
+    eprintln!(
+        "\n{}easy1090{} {} - {}",
+        log::bold(),
+        log::reset(),
+        crate::VERSION,
+        i18n::t("un_title", &[])
+    );
+    if run::dry_run() {
+        log::warn(&i18n::t("cli_dry_warning", &[]));
+    }
 }
 
 fn main() -> ExitCode {
@@ -85,7 +110,7 @@ fn main() -> ExitCode {
         }
     }
 
-    i18n::init(Some(std::path::Path::new(CONFIG_FILE)), cli_lang);
+    i18n::init(Some(&config_file()), cli_lang);
 
     if help_wanted {
         print_help();
@@ -100,12 +125,37 @@ fn main() -> ExitCode {
             print_help();
             1
         }
+        // status and open are read-only and print their own headers, so
+        // they skip the banner and never touch sudo.
         Some("status") => cmd::status::run(),
         Some("open") => cmd::open::run(&command_args),
-        Some("install") => cmd::install::run(&command_args),
-        Some(cmd) if KNOWN_COMMANDS.contains(&cmd) => {
-            log::error(&format!("\"{cmd}\" is not implemented yet."));
-            1
+        Some("install") => {
+            banner();
+            cmd::install::run(&command_args, &config_file(), &config_example())
+        }
+        Some("uninstall") => {
+            uninstall_banner();
+            cmd::uninstall::run(&command_args, &config_file())
+        }
+        Some("start") => {
+            banner();
+            cmd::service::run("start", &command_args)
+        }
+        Some("stop") => {
+            banner();
+            cmd::service::run("stop", &command_args)
+        }
+        Some("restart") => {
+            banner();
+            cmd::service::run("restart", &command_args)
+        }
+        Some("update") => {
+            banner();
+            cmd::update::run(&command_args)
+        }
+        Some("feed") => {
+            banner();
+            cmd::feed::run(&command_args, &config_file(), &config_example())
         }
         Some(cmd) => {
             log::error(&i18n::t("cmd_unknown", &[&cmd]));

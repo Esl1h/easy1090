@@ -176,7 +176,8 @@ EXAMPLES
     ./install.sh --dry-run                        show what it would do
 
 Configuration lives in install.conf (created from the .example on first run).
-The flags above override whatever is in there."),
+The flags above override whatever is in there.
+"),
     // status.sh
     ("sts_title", "status"),
     ("sts_hardware", "Hardware and driver"),
@@ -257,7 +258,8 @@ OPTIONS
     --verbose           debug level logging
     -h, --help          this help
 
-Does not remove lighttpd or jq, which are general purpose packages."),
+Does not remove lighttpd or jq, which are general purpose packages.
+"),
     // Entrypoint, services and open
     ("main_usage", "easy1090 %s - ADS-B stack in one command (Arch and derivatives)\\n\\nUSAGE\\n    easy1090 <command> [options]\\n\\nCOMMANDS\\n    install       install the stack (idempotent, safe to re-run)\\n    update        update package versions (install converges config)\\n    feed          feed public networks (ADSBExchange, airplanes.live)\\n    uninstall     undo the installation (best effort)\\n    status        what is running, what fell over, what is missing\\n    start         bring up readsb, lighttpd and tar1090\\n    stop          bring all three down\\n    restart       restart all three, in the right order\\n    open [target] open a component (without a target, lists the options)\\n\\nGLOBAL OPTIONS\\n    --lang <pt|en>   interface language\\n    --dry-run        print the exact commands, without executing\\n    --yes            do not ask anything (except the sudo password)\\n    --verbose        debug level logging\\n    --version        show version\\n    -h, --help       this help\\n\\nUse \"easy1090 <command> --help\" for per-command options.\\n\\nstatus and open do not need sudo.\\n"),
     ("cmd_unknown", "Unknown command: %s"),
@@ -314,7 +316,8 @@ OPTIONS
     --skip-readsb       leave readsb alone
     --dry-run           print the exact commands, without executing
     --yes               do not ask anything (except the sudo password)
-    -h, --help          this help"),
+    -h, --help          this help
+"),
     // Feed
     ("feed_step_cfg", "Feeds"),
     ("feed_step_stats", "Stats package"),

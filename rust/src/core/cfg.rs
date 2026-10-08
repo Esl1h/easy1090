@@ -40,6 +40,12 @@ pub struct Config {
 }
 
 impl Config {
+    /// Builds a config from an explicit map; used by the step tests to pin
+    /// exact values without touching the filesystem.
+    pub fn from_map(values: BTreeMap<String, String>) -> Config {
+        Config { values }
+    }
+
     pub fn get(&self, key: &str) -> Option<&str> {
         self.values.get(key).map(String::as_str)
     }
@@ -214,6 +220,125 @@ fn sed_preview(file: &Path, key: &str, escaped: &str) -> String {
         "sed -i 's|^{key}=.*|{key}=\"{escaped}\"|' {}",
         file.display()
     )
+}
+
+/// Receiver position is the only thing that cannot be guessed; prompts when
+/// missing, mirroring cfg::require_position. Under `--dry-run` the prompt is
+/// skipped and the position read as 0.0, which is what the bash does so the
+/// preview can walk the readsb config step.
+pub fn require_position(config_file: &Path, config: &mut Config) {
+    let lat = config.get("RECEIVER_LAT").unwrap_or("").to_string();
+    let lon = config.get("RECEIVER_LON").unwrap_or("").to_string();
+
+    if !lat.is_empty() && !lon.is_empty() {
+        validate_position(&lat, &lon);
+        log::debug(&format!("position: {lat}, {lon}"));
+        return;
+    }
+
+    if run::dry_run() {
+        log::warn(&t!("pos_dry"));
+        config.set("RECEIVER_LAT", "0.0");
+        config.set("RECEIVER_LON", "0.0");
+        return;
+    }
+
+    if run::assume_yes() {
+        crate::core::util::die(&t!("pos_required_yes", config_file.display()));
+    }
+
+    log::info(&t!("pos_intro"));
+
+    // Nobody knows their coordinates by heart, so point at the tools instead
+    // of leaving a bare prompt on screen.
+    eprint!(
+        "\n{}\n{}\n{}\n{}\n\n{}\n\n",
+        t!("pos_help_title"),
+        t!("pos_help_osm"),
+        t!("pos_help_gmaps"),
+        t!("pos_help_latlong"),
+        t!("pos_help_tip"),
+    );
+    let _ = std::io::stderr().flush();
+
+    // The bash `read -r -p`: prompt to stderr, IFS whitespace trimmed. The
+    // two prompts overwrite whatever the config held, a partially filled
+    // position is re-asked in full.
+    let new_lat = prompt_value(&t!("pos_lat"));
+    let new_lon = prompt_value(&t!("pos_lon"));
+
+    if new_lat.is_empty() || new_lon.is_empty() {
+        crate::core::util::die(&t!("pos_required"));
+    }
+    validate_position(&new_lat, &new_lon);
+
+    config.set("RECEIVER_LAT", &new_lat);
+    config.set("RECEIVER_LON", &new_lon);
+    persist(config_file, "RECEIVER_LAT", &new_lat);
+    persist(config_file, "RECEIVER_LON", &new_lon);
+    log::success(&t!("pos_saved", config_file.display()));
+}
+
+/// One `read -r -p` answer; EOF reads as empty, which the caller rejects.
+fn prompt_value(prompt: &str) -> String {
+    eprint!("{prompt}");
+    let _ = std::io::stderr().flush();
+    let mut line = String::new();
+    match std::io::stdin().read_line(&mut line) {
+        Ok(0) | Err(_) => String::new(),
+        Ok(_) => line.trim().to_string(),
+    }
+}
+
+/// Coordinates end up on the readsb command line in /etc/default/readsb. A
+/// value pasted with a comma ("23,58") would parse as the range of latitude
+/// 23 and leave the rest for systemctl to trip over. The regex and the awk
+/// range check of the bash, with the same abort message.
+pub fn validate_position(lat: &str, lon: &str) {
+    if !is_decimal_degrees(lat) || !in_range(lat, -90.0, 90.0) {
+        crate::core::util::die(&t!("pos_invalid", lat, lon));
+    }
+    if !is_decimal_degrees(lon) || !in_range(lon, -180.0, 180.0) {
+        crate::core::util::die(&t!("pos_invalid", lat, lon));
+    }
+}
+
+/// The `^-?[0-9]+(\.[0-9]+)?$` shape: optional minus, one or more digits,
+/// then optionally a dot with at least one digit.
+fn is_decimal_degrees(value: &str) -> bool {
+    let bytes = value.as_bytes();
+    let mut i = 0;
+    if bytes.first() == Some(&b'-') {
+        i += 1;
+    }
+    let int_start = i;
+    while i < bytes.len() && bytes[i].is_ascii_digit() {
+        i += 1;
+    }
+    if i == int_start {
+        return false;
+    }
+    if i < bytes.len() && bytes[i] == b'.' {
+        i += 1;
+        let frac_start = i;
+        while i < bytes.len() && bytes[i].is_ascii_digit() {
+            i += 1;
+        }
+        if i == frac_start {
+            return false;
+        }
+    }
+    i == bytes.len()
+}
+
+/// awk's `n >= min && n <= max` over the parsed value. The regex above
+/// already guarantees a plain decimal number, so the f64 parse cannot fail
+/// and never yields NaN, which awk would reject.
+fn in_range(value: &str, min: f64, max: f64) -> bool {
+    value
+        .parse::<f64>()
+        .map(|number| number >= min && number <= max)
+        .unwrap_or(false)
 }
 
 /// Feeds a public network only when asked explicitly, mirroring
@@ -419,5 +544,44 @@ mod tests {
             "UI_LANGUAGE=\"pt\"\n"
         );
         fs::remove_dir_all(&dir).ok();
+    }
+
+    #[test]
+    fn decimal_degrees_match_the_bash_regex() {
+        for ok in ["0", "-0", "0.0", "-23.58", "180", "-180", "12.345"] {
+            assert!(is_decimal_degrees(ok), "{ok:?} must match");
+        }
+        for bad in [
+            "", "-", ".", ".5", "-.5", "1.", "23,58", "+3", "1e2", "1 2", " 1", "1 ",
+        ] {
+            assert!(!is_decimal_degrees(bad), "{bad:?} must not match");
+        }
+    }
+
+    #[test]
+    fn ranges_follow_the_awk_bounds() {
+        assert!(in_range("0", -90.0, 90.0));
+        assert!(in_range("-90", -90.0, 90.0));
+        assert!(in_range("90", -90.0, 90.0));
+        assert!(!in_range("-90.1", -90.0, 90.0));
+        assert!(!in_range("90.1", -90.0, 90.0));
+        assert!(in_range("180", -180.0, 180.0));
+        assert!(!in_range("180.5", -180.0, 180.0));
+        // The regex keeps the parse from ever seeing these.
+        assert!(!in_range("not-a-number", 0.0, 1.0));
+    }
+
+    #[test]
+    fn require_position_dry_run_reads_zero_without_prompting() {
+        run::set_dry_run(true);
+        let config_file = PathBuf::from("/tmp/easy1090-cfg-test-dry/install.conf");
+        let mut config = Config::default();
+        apply_defaults(&mut config);
+
+        require_position(&config_file, &mut config);
+
+        assert_eq!(config.get("RECEIVER_LAT"), Some("0.0"));
+        assert_eq!(config.get("RECEIVER_LON"), Some("0.0"));
+        run::set_dry_run(false);
     }
 }

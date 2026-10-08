@@ -64,7 +64,7 @@ generate() {
     } >"$out"
 
     local previous_was_banner=false
-    local key line
+    local key line escaped
     while IFS= read -r line; do
         case "$line" in
         '#----'*)
@@ -85,7 +85,12 @@ generate() {
                 echo "error: the $lang catalog is missing key '$key'" >&2
                 exit 1
             fi
-            printf '    ("%s", "%s"),\n' "$key" "$(rust_escape "${catalog[$key]}")" >>"$out"
+            # Command substitution strips trailing newlines, which would
+            # silently drop the final newline of the multi-line usage
+            # messages. A sentinel keeps them; it is removed right after.
+            escaped=$(rust_escape "${catalog[$key]}"; printf 'X')
+            escaped="${escaped%X}"
+            printf '    ("%s", "%s"),\n' "$key" "$escaped" >>"$out"
             ;;
         *)
             previous_was_banner=false

@@ -69,15 +69,24 @@ fn unknown_command_errors_with_usage() {
 }
 
 #[test]
-fn unimplemented_command_errors() {
-    // install has a phase 4 port now (banner + preflight); the rest still
-    // report the generic message.
-    let out = bin().arg("update").output().unwrap();
-    assert!(!out.status.success());
-    let stdout = String::from_utf8(out.stdout).unwrap();
-    let stderr = String::from_utf8(out.stderr).unwrap();
-    assert!(stderr.contains("\"update\" is not implemented yet."));
-    assert!(stdout.is_empty());
+fn every_command_has_a_help_now() {
+    // Phase 5 completed the command set: each mutating command answers -h
+    // with its own usage and exits zero, without touching sudo or config.
+    let cases = [
+        ("install", "USAGE\n    ./install.sh [options]"),
+        ("uninstall", "USAGE\n    ./uninstall.sh [options]"),
+        ("update", "USAGE\n    easy1090 update [options]"),
+        ("feed", "USAGE\n    easy1090 feed [network] [options]"),
+    ];
+    for (command, usage) in cases {
+        let out = bin().args([command, "-h"]).output().unwrap();
+        assert!(out.status.success(), "{command} -h must exit 0");
+        let stdout = String::from_utf8(out.stdout).unwrap();
+        assert!(
+            stdout.contains(usage),
+            "{command} -h must print its usage: {stdout}"
+        );
+    }
 }
 
 #[test]

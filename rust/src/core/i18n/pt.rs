@@ -176,7 +176,8 @@ EXEMPLOS
     ./install.sh --dry-run                        mostra o que faria
 
 A configuração vive em install.conf (gerada a partir do .example na primeira
-execução). As flags acima sobrescrevem o que estiver lá."),
+execução). As flags acima sobrescrevem o que estiver lá.
+"),
     // status.sh
     ("sts_title", "status"),
     ("sts_hardware", "Hardware e driver"),
@@ -257,7 +258,8 @@ OPÇÕES
     --verbose           log em nível debug
     -h, --help          esta ajuda
 
-Não remove lighttpd nem jq, que são pacotes de uso geral."),
+Não remove lighttpd nem jq, que são pacotes de uso geral.
+"),
     // Entrypoint, services and open
     ("main_usage", "easy1090 %s - stack ADS-B em um comando (Arch e derivados)\\n\\nUSO\\n    easy1090 <comando> [opções]\\n\\nCOMANDOS\\n    install       instala o stack (idempotente, seguro reexecutar)\\n    update        atualiza versões dos pacotes (o install converge config)\\n    feed          alimenta redes públicas (ADSBExchange, airplanes.live)\\n    uninstall     desfaz a instalação (best-effort)\\n    status        o que está rodando, o que caiu, o que falta\\n    start         sobe readsb, lighttpd e tar1090\\n    stop          derruba os três\\n    restart       reinicia os três, na ordem certa\\n    open [alvo]   abre um componente (sem alvo, lista as opções)\\n\\nOPÇÕES GLOBAIS\\n    --lang <pt|en>   idioma da interface\\n    --dry-run        imprime os comandos exatos, sem executar\\n    --yes            não pergunta nada (exceto a senha do sudo)\\n    --verbose        log em nível debug\\n    --version        mostra a versão\\n    -h, --help       esta ajuda\\n\\nUse \"easy1090 <comando> --help\" para as opções de cada comando.\\n\\nstatus e open não precisam de sudo.\\n"),
     ("cmd_unknown", "Comando desconhecido: %s"),
@@ -314,7 +316,8 @@ OPÇÕES
     --skip-readsb       não mexe no readsb
     --dry-run           imprime os comandos exatos, sem executar
     --yes               não pergunta nada (exceto a senha do sudo)
-    -h, --help          esta ajuda"),
+    -h, --help          esta ajuda
+"),
     // Feed
     ("feed_step_cfg", "Feeds"),
     ("feed_step_stats", "Pacote de estatísticas"),

@@ -2,7 +2,8 @@
 //! in lib/common.sh. The dry-run mode prints the exact command that would run
 //! (rendered like bash `printf '%q'`), never a description of it.
 
-use std::ffi::OsString;
+use std::ffi::{OsStr, OsString};
+use std::io::Write;
 use std::os::unix::process::ExitStatusExt;
 use std::process::{Command, Output, Stdio};
 use std::sync::atomic::{AtomicBool, Ordering};
@@ -108,6 +109,25 @@ where
     I: IntoIterator<Item = S>,
     S: Into<OsString>,
 {
+    cmd_in_impl(None, args)
+}
+
+/// `run::cmd` from inside a directory, the `( cd dir && cmd )` subshell of
+/// the bash. The preview shows the command alone, exactly like the bash
+/// renders `run::cmd` inside the subshell.
+pub fn cmd_in<I, S>(dir: impl AsRef<OsStr>, args: I) -> bool
+where
+    I: IntoIterator<Item = S>,
+    S: Into<OsString>,
+{
+    cmd_in_impl(Some(dir.as_ref()), args)
+}
+
+fn cmd_in_impl<I, S>(dir: Option<&OsStr>, args: I) -> bool
+where
+    I: IntoIterator<Item = S>,
+    S: Into<OsString>,
+{
     let argv: Vec<OsString> = args.into_iter().map(Into::into).collect();
     let rendered = render(argv.iter().cloned());
 
@@ -120,8 +140,12 @@ where
     let Some((program, rest)) = argv.split_first() else {
         return true;
     };
-    Command::new(program)
-        .args(rest)
+    let mut command = Command::new(program);
+    command.args(rest);
+    if let Some(dir) = dir {
+        command.current_dir(dir);
+    }
+    command
         .stdin(Stdio::inherit())
         .stdout(Stdio::inherit())
         .stderr(Stdio::inherit())
@@ -139,6 +163,135 @@ where
     let mut argv: Vec<OsString> = vec![OsString::from("sudo")];
     argv.extend(args.into_iter().map(Into::into));
     cmd(argv)
+}
+
+/// `run::sudo` from inside a directory, the `( cd dir && sudo cmd )` shape
+/// feed::stats_run uses for the third party installer.
+pub fn sudo_in<I, S>(dir: impl AsRef<OsStr>, args: I) -> bool
+where
+    I: IntoIterator<Item = S>,
+    S: Into<OsString>,
+{
+    let mut argv: Vec<OsString> = vec![OsString::from("sudo")];
+    argv.extend(args.into_iter().map(Into::into));
+    cmd_in(dir, argv)
+}
+
+/// `run::sudo` with stderr silenced and the failure ignored, the
+/// `run::sudo ... 2>/dev/null || true` call sites. The preview stays the
+/// same: redirections are not part of argv, so the bash renders the command
+/// without them too.
+pub fn sudo_quiet<I, S>(args: I) -> bool
+where
+    I: IntoIterator<Item = S>,
+    S: Into<OsString>,
+{
+    let argv: Vec<OsString> = args.into_iter().map(Into::into).collect();
+    let rendered = render(argv.iter().cloned());
+
+    if dry_run() {
+        log::dry_run(&rendered);
+        return true;
+    }
+
+    log::debug(&format!("exec: {rendered}"));
+    let Some((program, rest)) = argv.split_first() else {
+        return true;
+    };
+    Command::new(program)
+        .args(rest)
+        .stdin(Stdio::inherit())
+        .stdout(Stdio::inherit())
+        .stderr(Stdio::null())
+        .status()
+        .map(|status| status.success())
+        .unwrap_or(false)
+}
+
+/// Writes a file as root, the `run::sudo_write` of the bash. Kept separate
+/// from run::sudo because the content has to land on the privileged side of
+/// the pipe, not in our process.
+///
+/// Returns whether the file changed: callers decide whether a service needs
+/// restarting, without which `systemctl enable --now` is a no-op on an
+/// already running unit. The comparison runs in dry-run too, so the preview
+/// claims a change (and a restart) exactly when a real run would.
+pub fn sudo_write(path: &str, content: &str) -> bool {
+    // `$(cat "$path" 2>/dev/null)` strips trailing newlines, which is what
+    // makes the round trip stable: tee writes content plus one newline.
+    let unchanged = std::fs::read_to_string(path)
+        .map(|existing| existing.trim_end_matches('\n') == content)
+        .unwrap_or(false);
+    if unchanged {
+        log::debug(&format!("unchanged: {path}"));
+        return false;
+    }
+
+    if dry_run() {
+        log::dry_run(&format!("sudo tee {path} <<'EOF'"));
+        // `printf '%s\n' "$content" | sed 's/^/        /'`: every line of the
+        // content, eight spaces in front, blank lines included.
+        for line in content.split('\n') {
+            eprintln!("        {line}");
+        }
+        log::dry_run("EOF");
+        return true;
+    }
+
+    log::debug(&format!("writing {path}"));
+    let mut child = match Command::new("sudo")
+        .arg("tee")
+        .arg(path)
+        .stdin(Stdio::piped())
+        .stdout(Stdio::null())
+        .stderr(Stdio::inherit())
+        .spawn()
+    {
+        Ok(child) => child,
+        Err(error) => {
+            eprintln!("{error}");
+            std::process::exit(1);
+        }
+    };
+    let _ = child.stdin.take().map(|mut stdin| {
+        stdin
+            .write_all(content.as_bytes())
+            .and_then(|_| stdin.write_all(b"\n"))
+            .and_then(|_| stdin.flush())
+    });
+    let _ = child.wait();
+    true
+}
+
+/// Appends one line to a file as root, the `printf ... | sudo tee -a` shape
+/// tar1090::fix_lighttpd_include uses. No preview of its own: the bash
+/// composes the dry-run line by hand at the call site.
+pub fn sudo_write_append(path: &str, line: &str) -> bool {
+    let mut child = match Command::new("sudo")
+        .arg("tee")
+        .arg("-a")
+        .arg(path)
+        .stdin(Stdio::piped())
+        .stdout(Stdio::null())
+        .stderr(Stdio::inherit())
+        .spawn()
+    {
+        Ok(child) => child,
+        Err(error) => {
+            eprintln!("{error}");
+            return false;
+        }
+    };
+
+    let mut written = true;
+    if let Some(mut stdin) = child.stdin.take() {
+        written = stdin
+            .write_all(line.as_bytes())
+            .and_then(|_| stdin.flush())
+            .is_ok();
+    }
+    let status = child.wait().map(|status| status.success()).unwrap_or(false);
+    written && status
 }
 
 /// Runs a command capturing stdout, the shape of the bash `$(cmd ...)`.

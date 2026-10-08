@@ -1,8 +1,12 @@
 //! Subcommand ports, one module per lib/cmd-*.sh file.
 
+pub mod feed;
 pub mod install;
 pub mod open;
+pub mod service;
 pub mod status;
+pub mod uninstall;
+pub mod update;
 
 use std::process::Stdio;
 

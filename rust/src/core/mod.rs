@@ -13,4 +13,5 @@ pub mod i18n;
 pub mod log;
 pub mod run;
 pub mod sudo;
+pub mod svc;
 pub mod util;

@@ -9,9 +9,10 @@ use std::process::Stdio;
 use crate::core::{log, run, util};
 use crate::t;
 
-/// RTLSDR_USB_VENDOR / RTLSDR_USB_PRODUCT from 00-preflight.sh.
-const RTLSDR_USB_VENDOR: &str = "0bda";
-const RTLSDR_USB_PRODUCT: &str = "2838";
+/// RTLSDR_USB_VENDOR / RTLSDR_USB_PRODUCT from 00-preflight.sh, also used by
+/// the readsb udev rule in 20-readsb.sh.
+pub const RTLSDR_USB_VENDOR: &str = "0bda";
+pub const RTLSDR_USB_PRODUCT: &str = "2838";
 
 pub fn run() {
     log::step(&t!("pre_step"));

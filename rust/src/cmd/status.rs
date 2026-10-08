@@ -9,6 +9,7 @@ use std::process::Stdio;
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use crate::cmd::local_ip;
+use crate::core::util::awk_number;
 use crate::core::{log, run, util};
 use crate::t;
 
@@ -256,36 +257,6 @@ fn json_age(now: &str) -> i64 {
     (now_secs - timestamp).trunc() as i64
 }
 
-/// awk's string-to-number conversion: the leading numeric prefix, 0 when the
-/// string does not start with one.
-fn awk_number(value: &str) -> f64 {
-    let text = value.trim_start();
-    let bytes = text.as_bytes();
-    let mut end = 0;
-
-    if end < bytes.len() && (bytes[end] == b'+' || bytes[end] == b'-') {
-        end += 1;
-    }
-    let mut digits = false;
-    while end < bytes.len() && bytes[end].is_ascii_digit() {
-        end += 1;
-        digits = true;
-    }
-    if end < bytes.len() && bytes[end] == b'.' {
-        end += 1;
-        while end < bytes.len() && bytes[end].is_ascii_digit() {
-            end += 1;
-            digits = true;
-        }
-    }
-
-    if digits {
-        text[..end].parse().unwrap_or(0.0)
-    } else {
-        0.0
-    }
-}
-
 /// `$(cmd ... 2>/dev/null)`: stdout with trailing newlines stripped, empty
 /// when the program cannot be spawned.
 fn capture_trimmed(args: &[&str]) -> String {
@@ -331,13 +302,5 @@ mod tests {
         assert_eq!(pad_state("running"), "running     ");
         assert_eq!(pad_state("123456789012"), "123456789012");
         assert_eq!(pad_state("1234567890123"), "1234567890123");
-    }
-
-    #[test]
-    fn awk_number_reads_the_leading_numeric_prefix() {
-        assert_eq!(awk_number("42"), 42.0);
-        assert_eq!(awk_number("-3.5x"), -3.5);
-        assert_eq!(awk_number("abc"), 0.0);
-        assert_eq!(awk_number("  7"), 7.0);
     }
 }
