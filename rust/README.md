@@ -7,16 +7,17 @@ testable code that ships as a single static binary.
 
 What the port is not: a rewrite with opinions of its own. The shell version
 under `lib/` defines the behavior, message by message, exit code by exit
-code, and CI enforces that the two do not drift apart. When the two disagree,
-the shell version wins and the port is fixed.
+code, and the checks below keep the two from drifting apart. When the two
+disagree, the shell version wins and the port is fixed.
 
 ## Status
 
 Release candidate. Every command is ported and output parity is verified
 (the full `--dry-run` matrix of every subcommand, in both interface
-languages, is compared line by line against the shell version in CI), but
-the port has not yet been exercised end to end on real hardware the way the
-shell release was. Until it is, the shell version remains the recommended
+languages, is compared line by line against the shell version in an Arch
+container before each release candidate; CI only gates the message catalogs),
+but the port has not yet been exercised end to end on real hardware the way
+the shell release was. Until it is, the shell version remains the recommended
 default and the binaries publish as pre-releases.
 
 ## Layout
@@ -37,7 +38,7 @@ rust/
 ├── scripts/
 │   ├── gen-catalogs.sh   regenerates the catalogs from lib/i18n/*.sh
 │   └── i18n-parity.sh    CI gate: the key sets must match, all four
-└── tests/               integration tests, including the parity harness
+└── tests/               integration tests (distro-independent, run in CI)
 ```
 
 Zero external dependencies. The crate is std-only, which is also why the
@@ -60,13 +61,16 @@ in CI fails. Never edit `src/core/i18n/*.rs` by hand.
 
 ## Parity
 
-Two gates keep the port honest:
+Two checks keep the port honest:
 
 - `scripts/i18n-parity.sh` compares the message key sets of the shell
-  catalogs against the Rust ones. Four comparisons, zero tolerance.
+  catalogs against the Rust ones. Four comparisons, zero tolerance. This one
+  runs in CI.
 - The `--dry-run` output of every subcommand is compared against the shell
-  version line by line. What you see in dry-run is exactly what would run,
-  in both implementations, byte for byte.
+  version line by line, run by hand in an Arch container before each release
+  candidate. It needs an Arch image, so it does not run in CI. What you see
+  in dry-run is exactly what would run, in both implementations, byte for
+  byte.
 
 ## Release artifacts
 
@@ -76,10 +80,16 @@ the tag workflow (`.github/workflows/release.yml`):
 ```
 easy1090-<ver>-linux-amd64.bin     static musl binary, x86_64
 easy1090-<ver>-linux-arm64.bin     static musl binary, aarch64
-easy1090-<ver>-linux-amd64.tar.gz binary + README + LICENSE
+easy1090-<ver>-linux-amd64.tar.gz  binary + README + LICENSE + install.conf.example + vendor/
+easy1090-<ver>-linux-arm64.tar.gz  same, aarch64
 easy1090-<ver>-shell.tar.gz        the shell tree, without this port
 SHA256SUMS
 ```
+
+The archives are the way to install: the binary resolves `install.conf`,
+`install.conf.example` and `vendor/` in its working directory, and the pinned
+tar1090 installer in `vendor/` is a script run as is, so a bare `.bin` cannot
+complete an install. Extract an archive and run `./easy1090` from there.
 
 ## Scope
 

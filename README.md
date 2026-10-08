@@ -40,16 +40,19 @@ cd easy1090
 
 ### The Rust port (release candidate)
 
-There is a second implementation of the same installer in Rust, under [`rust/`](rust/README.md): same commands, same messages, same behavior, verified by comparing its output against the shell version. Every release publishes it as a static musl binary, so the tree clone above stops being necessary:
+There is a second implementation of the same installer in Rust, under [`rust/`](rust/README.md): same commands, same messages, same behavior, verified by comparing its output against the shell version. Every release publishes it as a static musl binary in an archive, so the tree clone above is replaced by a download:
 
 ```bash
-curl -fsSL -o easy1090 \
-  https://github.com/Esl1h/easy1090/releases/download/v0.2.0-rust.1-rc/easy1090-0.2.0-linux-amd64.bin
-chmod +x easy1090
-sudo ./easy1090 install
+curl -fsSLO \
+  https://github.com/Esl1h/easy1090/releases/download/v0.2.0-rust.1-rc/easy1090-0.2.0-linux-amd64.tar.gz
+mkdir easy1090 && tar -xzf easy1090-0.2.0-linux-amd64.tar.gz -C easy1090
+cd easy1090
+./easy1090 install
 ```
 
-There is an `arm64` build alongside it for Raspberry Pi and friends, and a `SHA256SUMS` to check. Being statically linked, one file runs on any Arch derivative regardless of its glibc age.
+Run it as your normal user, like the shell version: it asks for `sudo` when a step needs it, and refuses to start as root. Run it from the extracted directory, because the binary looks for `install.conf`, `install.conf.example` and `vendor/` in the current directory, the way the shell version looks next to the script. The archive carries the pinned tar1090 installer from `vendor/`, which is why the bare `.bin` also published on the release cannot complete an install on its own.
+
+There is an `arm64` archive alongside it for Raspberry Pi and friends, and a `SHA256SUMS` to check. Being statically linked, the binary runs on any Arch derivative regardless of its glibc age.
 
 Two honest caveats: it is a release candidate, not the battle-tested default yet, and the install is download-and-run, deliberately not `curl | sudo bash`, because `sudo` needs a real tty for the password and the first run is interactive (language, antenna position, feeding).
 
