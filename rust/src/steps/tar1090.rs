@@ -3,8 +3,11 @@
 //! There is no tar1090 package in the AUR. Upstream ships an install.sh
 //! written for Debian and Raspberry Pi OS, which we vendor under vendor/
 //! instead of piping it from the network on every run. The script itself
-//! stays bash and is only executed, never ported or paraphrased: the pin in
-//! install.conf (TAR1090_INSTALLER_SHA256) is verified before it runs.
+//! stays bash and is only executed, never ported or altered: the pin in
+//! install.conf (TAR1090_INSTALLER_SHA256) is verified before it runs. The
+//! file next to the binary is used when present; otherwise the byte-identical
+//! copy compiled into the binary, so a bare release binary can finish an
+//! install.
 //!
 //! Three Arch specific gaps this module closes, all silent failures:
 //!   - lighttpd.conf on Arch is minimal and never includes conf-enabled, so
@@ -14,8 +17,9 @@
 //!   - the upstream installer only restarts lighttpd if it was already
 //!     running; a freshly installed one stays dead and disabled.
 
+use std::io::Write;
 use std::path::Path;
-use std::process::Stdio;
+use std::process::{Command, Stdio};
 
 use crate::core::cfg::Config;
 use crate::core::{log, run, svc, util};
@@ -28,10 +32,24 @@ const LIGHTTPD_CONF_AVAILABLE: &str = "/etc/lighttpd/conf-available";
 const LIGHTTPD_CONF_ENABLED: &str = "/etc/lighttpd/conf-enabled";
 const TAR1090_URL_PATH: &str = "/tar1090/";
 
+/// The pinned upstream installer, compiled in from the very file the repo
+/// vendors (never a second copy), so the bare release binary does not need
+/// vendor/ next to it. The file on disk still wins when present.
+const EMBEDDED_INSTALLER: &[u8] = include_bytes!(concat!(
+    env!("CARGO_MANIFEST_DIR"),
+    "/../vendor/tar1090-install.sh"
+));
+
 /// `${EASY1090_ROOT}/vendor/tar1090-install.sh`, resolved at runtime like
 /// the other config-adjacent paths.
 pub fn installer_path() -> String {
     format!("{}/vendor/tar1090-install.sh", util::root().display())
+}
+
+/// Where the compiled-in copy is written before it runs, next to the other
+/// build caches (which uninstall removes).
+fn cached_installer_path() -> String {
+    format!("{}/.cache/easy1090/tar1090-install.sh", util::home())
 }
 
 /// Shared with the uninstall command.
@@ -80,11 +98,14 @@ fn dependencies(pkg: &dyn Backend) {
 /// refresh the file, then update TAR1090_INSTALLER_SHA256 in install.conf.
 fn verify_vendored(config: &Config) {
     let installer = installer_path();
-    if !Path::new(&installer).is_file() {
-        util::die(&t!("tar_vendor_missing", &installer));
-    }
-
-    let actual = sha256_of(&installer);
+    let actual = if Path::new(&installer).is_file() {
+        sha256_of(&installer)
+    } else {
+        log::debug(&format!(
+            "{installer} not found, using the compiled-in installer"
+        ));
+        sha256_of_bytes(EMBEDDED_INSTALLER)
+    };
 
     let pin = config.get("TAR1090_INSTALLER_SHA256").unwrap_or("");
     if pin.is_empty() {
@@ -108,14 +129,36 @@ fn verify_vendored(config: &Config) {
 /// hash, which fails the pin comparison.
 fn sha256_of(path: &str) -> String {
     run::capture(["sha256sum", path], Stdio::null())
-        .map(|out| {
-            String::from_utf8_lossy(&out.stdout)
-                .split_whitespace()
-                .next()
-                .unwrap_or("")
-                .to_string()
-        })
+        .map(|out| first_field(&out.stdout))
         .unwrap_or_default()
+}
+
+/// The same hash for bytes that are not on disk, fed to `sha256sum` on stdin
+/// so a dry-run can verify the pin without writing anything.
+fn sha256_of_bytes(bytes: &[u8]) -> String {
+    let Ok(mut child) = Command::new("sha256sum")
+        .stdin(Stdio::piped())
+        .stdout(Stdio::piped())
+        .stderr(Stdio::null())
+        .spawn()
+    else {
+        return String::new();
+    };
+    if let Some(mut stdin) = child.stdin.take() {
+        let _ = stdin.write_all(bytes);
+    }
+    child
+        .wait_with_output()
+        .map(|out| first_field(&out.stdout))
+        .unwrap_or_default()
+}
+
+fn first_field(stdout: &[u8]) -> String {
+    String::from_utf8_lossy(stdout)
+        .split_whitespace()
+        .next()
+        .unwrap_or("")
+        .to_string()
 }
 
 fn install() {
@@ -125,7 +168,28 @@ fn install() {
     }
 
     log::info(&t!("tar_running"));
-    run::sudo(["bash", &installer_path()]);
+    let installer = installer_path();
+    if Path::new(&installer).is_file() {
+        run::sudo(["bash", &installer]);
+        return;
+    }
+
+    // Only a real run writes the compiled-in copy; the dry-run just previews
+    // the command that would run it.
+    let cached = cached_installer_path();
+    if !run::dry_run() {
+        if let Err(error) = write_embedded(Path::new(&cached)) {
+            util::die(&error.to_string());
+        }
+    }
+    run::sudo(["bash", &cached]);
+}
+
+fn write_embedded(path: &Path) -> std::io::Result<()> {
+    if let Some(dir) = path.parent() {
+        std::fs::create_dir_all(dir)?;
+    }
+    std::fs::write(path, EMBEDDED_INSTALLER)
 }
 
 /// Without this include, everything the tar1090 installer wrote is dead
@@ -256,4 +320,36 @@ fn curl_code(url: &str) -> String {
             .to_string()
     })
     .unwrap_or_default()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::core::cfg;
+
+    #[test]
+    fn the_compiled_in_installer_matches_the_pin_in_the_example_config() {
+        // Updating vendor/ without updating the pin would ship a binary whose
+        // installer fails its own checksum.
+        let values = cfg::parse_str(cfg::EXAMPLE_CONFIG);
+        assert_eq!(
+            sha256_of_bytes(EMBEDDED_INSTALLER),
+            values["TAR1090_INSTALLER_SHA256"]
+        );
+    }
+
+    #[test]
+    fn hashing_bytes_agrees_with_hashing_the_written_file() {
+        let dir = std::env::temp_dir().join(format!("easy1090-tar1090-{}", std::process::id()));
+        let path = dir.join("nested").join("tar1090-install.sh");
+
+        write_embedded(&path).unwrap();
+
+        assert_eq!(std::fs::read(&path).unwrap(), EMBEDDED_INSTALLER);
+        assert_eq!(
+            sha256_of(path.to_str().unwrap()),
+            sha256_of_bytes(EMBEDDED_INSTALLER)
+        );
+        std::fs::remove_dir_all(&dir).ok();
+    }
 }
