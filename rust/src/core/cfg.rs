@@ -12,6 +12,14 @@ use std::path::Path;
 use crate::core::{i18n, log, run};
 use crate::t;
 
+/// The repo's install.conf.example, compiled in so a bare release binary can
+/// create its first config. It is the same file, not a copy: the one on disk
+/// still wins when present.
+pub const EXAMPLE_CONFIG: &str = include_str!(concat!(
+    env!("CARGO_MANIFEST_DIR"),
+    "/../install.conf.example"
+));
+
 /// Defaults applied to missing or empty values, from cfg::_apply_defaults.
 const DEFAULTS: &[(&str, &str)] = &[
     ("RECEIVER_GAIN", "auto"),
@@ -84,6 +92,7 @@ fn load_impl(
     language_from_config: bool,
 ) -> Config {
     let mut source = config_file.to_path_buf();
+    let mut reading_example = false;
     if !config_file.exists() {
         if dry_run {
             // Nothing is written in dry-run, so read the example instead;
@@ -96,22 +105,31 @@ fn load_impl(
                 config_file.display()
             ));
             source = example_file.to_path_buf();
+            reading_example = true;
         } else {
             // Creating it from the example is harmless and is what every
             // first run needs, so it is not worth a prompt the user can trip
-            // over.
-            if !example_file.exists() {
-                crate::core::util::die(&t!("cfg_example_missing", example_file.display()));
-            }
-            if let Err(error) = fs::copy(example_file, config_file) {
+            // over. Without the example next to the binary, the compiled-in
+            // copy stands in for it.
+            let created = if example_file.exists() {
+                fs::copy(example_file, config_file).map(|_| ())
+            } else {
+                fs::write(config_file, EXAMPLE_CONFIG)
+            };
+            if let Err(error) = created {
                 crate::core::util::die(&error.to_string());
             }
             log::info(&t!("cfg_created", config_file.display()));
         }
     }
 
+    let content = match fs::read_to_string(&source) {
+        Ok(content) => content,
+        Err(_) if reading_example => EXAMPLE_CONFIG.to_string(),
+        Err(_) => String::new(),
+    };
     let mut config = Config {
-        values: parse_str(&fs::read_to_string(&source).unwrap_or_default()),
+        values: parse_str(&content),
     };
     apply_defaults(&mut config);
 
@@ -569,6 +587,41 @@ mod tests {
         assert!(!config_file.exists());
         assert_eq!(config.get("NET_RI_PORT"), Some("30001"));
         assert_eq!(config.get("NET_BI_PORT"), Some("30004,30104"));
+        fs::remove_dir_all(&dir).ok();
+    }
+
+    #[test]
+    fn load_without_an_example_on_disk_uses_the_compiled_in_copy() {
+        let dir = temp_path("load-embedded");
+        fs::create_dir_all(&dir).unwrap();
+        let config_file = dir.join("install.conf");
+        let missing_example = dir.join("install.conf.example");
+
+        let config = load_impl(&config_file, &missing_example, false, "en", false);
+
+        // The example ships UI_LANGUAGE="", which persistence rewrites in
+        // place; everything else is the example byte for byte.
+        assert_eq!(
+            fs::read_to_string(&config_file).unwrap(),
+            EXAMPLE_CONFIG.replace("UI_LANGUAGE=\"\"", "UI_LANGUAGE=\"en\"")
+        );
+        assert_eq!(config.get("NET_BI_PORT"), Some("30004,30104"));
+        fs::remove_dir_all(&dir).ok();
+    }
+
+    #[test]
+    fn load_dry_run_without_an_example_on_disk_reads_the_compiled_in_copy() {
+        let dir = temp_path("load-dry-embedded");
+        fs::create_dir_all(&dir).unwrap();
+        let config_file = dir.join("install.conf");
+        let missing_example = dir.join("install.conf.example");
+
+        let config = load_impl(&config_file, &missing_example, true, "en", false);
+
+        assert!(!config_file.exists());
+        assert!(config
+            .get("TAR1090_INSTALLER_SHA256")
+            .is_some_and(|pin| pin.len() == 64));
         fs::remove_dir_all(&dir).ok();
     }
 

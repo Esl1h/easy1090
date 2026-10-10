@@ -6,10 +6,14 @@ on:
     paths:
       - 'rust/**'
       - 'lib/i18n/**'
+      - 'vendor/**'
+      - 'install.conf.example'
   pull_request:
     paths:
       - 'rust/**'
       - 'lib/i18n/**'
+      - 'vendor/**'
+      - 'install.conf.example'
   workflow_dispatch:
 
 permissions:

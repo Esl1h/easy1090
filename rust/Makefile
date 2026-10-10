@@ -59,11 +59,10 @@ release-arm64:
 	install -Dm755 target/$(TARGET_ARM64)/release/easy1090 $(DIST)/$(BIN_ARM64)
 
 # Binary + README + LICENSE, flat at the archive root so extracting gives a
-# runnable ./easy1090. install.conf.example and vendor/ ride along because the
-# binary resolves both next to its working directory, like the shell version
-# does next to the script: the bare .bin cannot complete an install, since the
-# pinned tar1090 installer is a script run as is. The repo ships no shell
-# completions to add here.
+# runnable ./easy1090. install.conf.example and vendor/ ride along although
+# the binary has both compiled in: the copies next to it win, which keeps the
+# shell version's layout, and vendor/ carries the tar1090 license text. The
+# repo ships no shell completions to add here.
 # $(1) is the binary in $(DIST), $(2) the archive name.
 define stage-tarball
 	rm -rf $(DIST)/stage-$(2)
