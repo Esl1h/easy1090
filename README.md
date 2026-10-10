@@ -40,19 +40,18 @@ cd easy1090
 
 ### The Rust port (release candidate)
 
-There is a second implementation of the same installer in Rust, under [`rust/`](rust/README.md): same commands, same messages, same behavior, verified by comparing its output against the shell version. Every release publishes it as a static musl binary in an archive, so the tree clone above is replaced by a download:
+There is a second implementation of the same installer in Rust, under [`rust/`](rust/README.md): same commands, same messages, same behavior, verified by comparing its output against the shell version. Every release publishes it as a static, self-contained binary, so the tree clone above is replaced by a download:
 
 ```bash
-curl -fsSLO \
-  https://github.com/Esl1h/easy1090/releases/download/v0.2.0-rust.2-rc/easy1090-0.2.0-linux-amd64.tar.gz
-mkdir easy1090 && tar -xzf easy1090-0.2.0-linux-amd64.tar.gz -C easy1090
-cd easy1090
+curl -fsSL -o easy1090 \
+  https://github.com/Esl1h/easy1090/releases/download/v0.2.0-rust.3-rc/easy1090-0.2.0-linux-amd64.bin
+chmod +x easy1090
 ./easy1090 install
 ```
 
-Run it as your normal user, like the shell version: it asks for `sudo` when a step needs it, and refuses to start as root. Run it from the extracted directory: the binary keeps `install.conf` in the current directory, the way the shell version keeps it next to the script. It has `install.conf.example` and the pinned tar1090 installer compiled in, so the bare `.bin` published on the release also works on its own; the copies from the archive win when present. Candidates up to `v0.2.0-rust.2-rc` predate this and need the archive, which is why the example above uses it.
+Run it as your normal user, like the shell version: it asks for `sudo` when a step needs it, and refuses to start as root. Run it from the directory that should hold `install.conf`: the binary keeps that file in the current directory, the way the shell version keeps it next to the script. `install.conf.example` and the pinned tar1090 installer are compiled in, so the `.bin` needs nothing else.
 
-There is an `arm64` archive alongside it for Raspberry Pi and friends, and a `SHA256SUMS` to check. Being statically linked, the binary runs on any Arch derivative regardless of its glibc age.
+There is an `arm64` binary alongside it for Raspberry Pi and friends, and a `SHA256SUMS` to check. Each binary also comes in a `.tar.gz` with the README, the license and a `vendor/` directory that carries the tar1090 license text; files next to the binary win over the compiled-in copies. Being statically linked, the binary runs on any Arch derivative regardless of its glibc age.
 
 Two honest caveats: it is a release candidate, not the battle-tested default yet, and the install is download-and-run, deliberately not `curl | sudo bash`, because `sudo` needs a real tty for the password and the first run is interactive (language, antenna position, feeding).
 
@@ -236,7 +235,7 @@ Bug reports from real installations are the most useful contribution, because th
 
 Current release: [v0.2.0](https://github.com/Esl1h/easy1090/releases/tag/v0.2.0), tested end to end on a clean Omarchy (Arch) machine with an RTL-SDR Blog V4, and on an EndeavourOS server that had been built by hand.
 
-The Rust port is at [v0.2.0-rust.2-rc](https://github.com/Esl1h/easy1090/releases/tag/v0.2.0-rust.2-rc): full command parity with the shell version, verified output-for-output, but not yet exercised end to end on real hardware the way the shell release was.
+The Rust port is at [v0.2.0-rust.3-rc](https://github.com/Esl1h/easy1090/releases/tag/v0.2.0-rust.3-rc): full command parity with the shell version, verified output-for-output, but not yet exercised end to end on real hardware the way the shell release was.
 
 Changes are tracked in [CHANGELOG.md](CHANGELOG.md). The frictions found along the way, with their causes and the reasoning behind each workaround, are in [KNOWN_ISSUES.md](KNOWN_ISSUES.md), which is worth reading before opening an issue.
 
