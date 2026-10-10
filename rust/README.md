@@ -86,10 +86,14 @@ easy1090-<ver>-shell.tar.gz        the shell tree, without this port
 SHA256SUMS
 ```
 
-The archives are the way to install: the binary resolves `install.conf`,
-`install.conf.example` and `vendor/` in its working directory, and the pinned
-tar1090 installer in `vendor/` is a script run as is, so a bare `.bin` cannot
-complete an install. Extract an archive and run `./easy1090` from there.
+The binary is self-contained: `install.conf.example` and the pinned tar1090
+installer are compiled in from the same repo files, so the bare `.bin` can
+complete an install. It looks for `install.conf`, `install.conf.example` and
+`vendor/` in its working directory, and what it finds there wins over the
+compiled-in copies; the archives ship them for that reason, and for the
+tar1090 license text. Run `./easy1090` from the directory that should hold
+`install.conf`. Candidates up to `v0.2.0-rust.2-rc` predate this and need the
+archive.
 
 ## Scope
 

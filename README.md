@@ -50,7 +50,7 @@ cd easy1090
 ./easy1090 install
 ```
 
-Run it as your normal user, like the shell version: it asks for `sudo` when a step needs it, and refuses to start as root. Run it from the extracted directory, because the binary looks for `install.conf`, `install.conf.example` and `vendor/` in the current directory, the way the shell version looks next to the script. The archive carries the pinned tar1090 installer from `vendor/`, which is why the bare `.bin` also published on the release cannot complete an install on its own.
+Run it as your normal user, like the shell version: it asks for `sudo` when a step needs it, and refuses to start as root. Run it from the extracted directory: the binary keeps `install.conf` in the current directory, the way the shell version keeps it next to the script. It has `install.conf.example` and the pinned tar1090 installer compiled in, so the bare `.bin` published on the release also works on its own; the copies from the archive win when present. Candidates up to `v0.2.0-rust.2-rc` predate this and need the archive, which is why the example above uses it.
 
 There is an `arm64` archive alongside it for Raspberry Pi and friends, and a `SHA256SUMS` to check. Being statically linked, the binary runs on any Arch derivative regardless of its glibc age.
 
